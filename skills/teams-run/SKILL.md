@@ -55,7 +55,7 @@ Task board format:
   TEAMS  [N of M tasks complete]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   ✓  Task 1: Project Setup          [done]
-  ►  Task 2: Auth System            [in progress]
+  ◉  Task 2: Auth System            [validating...]
   ○  Task 3: API Routes             [pending]
   ○  Task 4: Frontend               [pending]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -63,7 +63,8 @@ Task board format:
 
 Status symbols (derived from shared task list only):
 - `✓` — task status is "completed"
-- `►` — task status is "in progress" (claimed by Builder)
+- `►` — task status is "in progress" (Builder is implementing)
+- `◉` — task status is "validating" (Validator is reviewing)
 - `✗` — task status is "failed" (Validator could not approve after max pushbacks)
 - `○` — task status is "pending"
 

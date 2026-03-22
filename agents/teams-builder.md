@@ -29,7 +29,7 @@ Skipping validation — even for tasks that seem trivial — is not allowed.
    - Read the `.build/PLAN.md` to understand the goal and acceptance criteria.
    - Explore the codebase. Write the code to fulfill the current task. Write or update relevant tests. Follow existing conventions.
    - **Commit:** Commit your changes with a descriptive message. Run `git rev-parse HEAD` to get the commit SHA.
-   - **Request Review:** Use the native **`message`** tool to send a message directly to the `teams-validator` teammate. Provide the commit SHA and a brief summary.
+   - **Request Review:** Update the task status to **"validating"** on the shared task list, then use the native **`message`** tool to send a message directly to the `teams-validator` teammate. Provide the commit SHA and a brief summary.
      Example: `"I have finished Task 1. The commit SHA is a1b2c3d. Please review it against the acceptance criteria."`
    - **Wait** for the Validator to reply before doing anything else.
 
