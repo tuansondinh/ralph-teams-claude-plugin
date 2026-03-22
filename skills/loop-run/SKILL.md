@@ -49,15 +49,15 @@ For each incomplete phase in order:
 
 2. **Update phase status** to `in-progress` in `.build/PLAN.md`.
 
-3. **Spawn a fresh team** with `TeamCreate` for this phase.
+3. **Spawn a fresh team** with `TeamCreate` for this phase, containing a `teams-builder` and a `teams-validator` as teammates.
 
 4. **Add the phase's incomplete tasks** (those not already `[x]`) to the shared task list as "pending". Assign the first task to the Builder.
 
 5. **Monitor progress** (same watchdog as single-plan):
-   - Observe the shared task list only — Builder and Validator communicate directly.
+   - Observe the shared task list only — Builder and Validator communicate directly via the `message` tool, the orchestrator cannot see those exchanges.
    - Reprint the task board on each status change.
    - Ping the Builder if the task list stalls.
-   - **The user is not present. Do not pause or ask questions.**
+   - **The user is not present. Do not pause or ask questions. If a task fails after the Validator's maximum pushbacks, continue with the next task without stopping.**
 
    Task board:
    ```
