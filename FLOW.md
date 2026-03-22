@@ -7,7 +7,7 @@ flowchart TD
     %% Roles
     User([User])
     Orch[Orchestrator]
-    Team[Agent Team <br>(Builder + Validator)]
+    Team["Agent Team <br>(Builder + Validator)"]
     Tasks[(Shared Task List)]
 
     %% Flow
