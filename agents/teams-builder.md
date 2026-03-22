@@ -40,11 +40,9 @@ Skipping validation — even for tasks that seem trivial — is not allowed.
      - Wait again.
    - If `PASS`:
      - Mark the current task as "completed" on the shared task list.
-     - Check off the task in `.build/PLAN.md` (change `[ ]` to `[x]`).
      - Only now claim the next unassigned task and begin the Implement Phase again.
    - If `VERDICT: FAIL — MAX ATTEMPTS REACHED`:
      - Mark the current task as "failed" on the shared task list.
-     - Note it in `.build/PLAN.md` (change `[ ]` to `[!]`).
      - Move on to the next unassigned task.
 
 ## Rules
