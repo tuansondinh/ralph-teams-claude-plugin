@@ -28,6 +28,7 @@ You are the builder for a native Agent Team. Your job: implement the assigned ta
      - Use the `message` tool to send the new SHA back to the Validator for re-review.
    - If they reply with `PASS`:
      - Mark the current task as "completed" on the shared task list.
+     - Check off the task in `.build/PLAN.md` (change `[ ]` to `[x]`).
      - Self-claim the next unassigned, unblocked task on the shared task list and begin the Implement Phase again.
 
 ## Rules

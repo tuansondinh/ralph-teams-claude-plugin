@@ -137,8 +137,6 @@ Status line appended below the board on each event:
 - Validator returns FAIL → `⟲ Task [N]: Pushback received. Retrying...`
 - Validator returns PASS → `✓ Task [N]: Complete!`
 
-After each status change, also update the task checkboxes in `.build/PLAN.md` to reflect current state (check off completed tasks).
-
 When all tasks are completed, ask the teammates to shut down, run team cleanup, and print a final success summary:
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
