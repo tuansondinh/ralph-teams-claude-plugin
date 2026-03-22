@@ -6,7 +6,7 @@ user-invocable: true
 
 # Teams: Work (Resume Build)
 
-You are the Team Lead. Your job: find an existing `.build/PLAN.md`, resume the build, and spawn a team-lead agent to orchestrate completion.
+You are the Team Lead. Your job: find an existing `.build/PLAN.md`, resume the build, and orchestrate builder and validator teammates for incomplete phases.
 
 ---
 
@@ -26,7 +26,7 @@ If it exists, extract:
 
 ---
 
-## Step 2: Create Team and Spawn Lead
+## Step 2: Create Team and Resume
 
 Print:
 
@@ -36,59 +36,83 @@ Print:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-Then:
+Then orchestrate the build for incomplete phases:
 
-1. **Create a team** using `TeamCreate`:
-   - `team_name`: derive from the plan title the same way as in `/teams:plan`, e.g., `"teams-auth-system"` (slugified, lowercase, hyphens)
-   - `description`: "[Feature name] — agent team execution"
+### 1. Create the team
 
-   (If a team with this name already exists from a prior run, `TeamCreate` will reuse it or error — adjust as needed)
+Use `TeamCreate`:
+- `team_name`: derive from the plan title the same way as in `/teams:plan`, e.g., `"teams-auth-system"` (slugified, lowercase, hyphens)
+- `description`: "[Feature name] — agent team execution"
 
-2. **Spawn the Team Lead agent** using `Agent`:
-   - `team_name`: the team name
-   - `name`: "team-lead"
-   - `subagent_type: "teams:teams-lead"`
-   - `mode: "bypassPermissions"`
-   - Do NOT use `run_in_background` (let it run synchronously)
-   - `prompt`:
-   ```
-   Resume the build. Read .build/PLAN.md and continue from where the last run left off. Be verbose.
+### 2. For each phase
 
-   Current directory: [working directory]
-   Plan file: .build/PLAN.md
+**Skip if done**: if phase `Status: done`, print and continue to next phase.
 
-   Your job:
-   1. Read .build/PLAN.md
-   2. For each phase:
-      - If status is "done", print and skip it
-      - If status is "pending" or "partial", print "[phase] — rebuilding"
-   3. For each phase to build:
-      - Print: "Phase N: [name] — starting"
-      - Create a task with TaskCreate
-      - Spawn a builder agent
-      - Print builder's commit SHA
-      - Spawn a validator
-      - Print validator's verdict
-      - If FAIL: retry builder with feedback, re-validate, print result
-      - Update task status
-      - Update .build/PLAN.md
-      - Print phase result
-   4. After all phases, print final summary
+**Resume if pending or partial**: if `Status: pending` or `Status: partial`, orchestrate:
 
-   Output everything — the user is watching.
-   ```
+Print the phase header:
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Phase N: [Phase Name] — resuming
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
 
-3. **Capture and display team-lead output** — spawn the team-lead with Agent, capture its response, and display it to the user:
-   ```
-   [Agent call with the prompt above]
-   [Team-lead response] → display this fully to the user
-   ```
-   The team-lead returns everything it did: phases executed, builder commits, validator verdicts, retries, final summary.
+**a) Create a task** using `TaskCreate`:
+```
+{
+  "subject": "Build Phase N: [Phase Name]",
+  "description": "[phase goal and acceptance criteria]"
+}
+```
 
----
+**b) Spawn the builder** using `Agent`:
+- `team_name`: the team name
+- `name`: `"builder-phase-N"`
+- `subagent_type: "teams:teams-builder"`
+- `mode: "bypassPermissions"`
+- `prompt`:
+```
+=== FULL PLAN ===
+[entire .build/PLAN.md contents]
 
-## Notes
+=== YOUR PHASE ===
+[current phase: goal, tasks, acceptance criteria]
 
-- If all phases are done, the team lead will report completion
-- If some phases need rebuilding, they will be re-executed
-- Check `.build/PLAN.md` for real-time progress
+=== PREVIOUS PHASES COMPLETED ===
+[list of prior phase commit SHAs and summaries, or "none"]
+```
+
+Display builder output to the user.
+
+**c) Spawn the validator** using `Agent`:
+- `team_name`: the team name
+- `name`: `"validator-phase-N"`
+- `subagent_type: "teams:teams-validator"`
+- `prompt`:
+```
+=== PHASE SPEC ===
+[current phase: goal, tasks, acceptance criteria]
+
+=== BUILDER'S COMMIT SHA ===
+[commit SHA from builder report]
+```
+
+**d) Check the verdict** — extract `VERDICT: PASS` or `VERDICT: FAIL`.
+
+**e) If FAIL — retry once**:
+- Spawn a new builder with validator findings
+- Get new commit SHA
+- Re-validate
+- Final attempt
+
+**f) Update task and plan**:
+- `TaskUpdate` to mark task `status: "completed"`
+- Update `.build/PLAN.md`:
+  - Set phase `Status: done` (if PASS) or `Status: partial` (if FAIL after retry)
+  - Add validator notes if FAIL
+
+Print phase result.
+
+### 3. After all phases
+
+Print final summary with completion counts.
