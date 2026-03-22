@@ -1,16 +1,12 @@
 ---
 name: work
-description: "Execute an existing Teams build plan. Use when user says '/teams:work', 'run the teams build', 'execute the plan', 'resume the build', or wants to re-run or continue an existing .build/PLAN.md."
+description: "Resume building an existing Teams plan. Builder and validator work in parallel."
 user-invocable: true
 ---
 
 # Teams: Work (Resume Build)
 
-You are a skill that resumes builds. Your job:
-1. Find the existing `.build/PLAN.md`
-2. Create a team and spawn the team-lead teammate
-3. Display progress as the team works
-4. Return when done
+You are the orchestrator. Your job: resume an existing build where builder and validator work in parallel for each incomplete phase.
 
 ---
 
@@ -20,55 +16,48 @@ You are a skill that resumes builds. Your job:
 cat .build/PLAN.md
 ```
 
-If the file doesn't exist, tell the user:
+If not found, tell user:
 > `.build/PLAN.md` not found. Use `/teams:plan` to create a plan first.
 
-If it exists, extract:
-- The feature name from the title
-- Total phase count
-- Current phases: which are done, pending, partial, failed?
+Extract:
+- Feature name
+- Phase count
+- Which phases are done, pending, or partial?
 
 ---
 
-## Step 2: Create Team and Spawn Team Lead
+## Step 2: Build Incomplete Phases
 
-Print:
-
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  TEAMS  Resuming build...
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-### 1. Create the team
-
-Use `TeamCreate`:
-- `team_name`: derived from plan title, e.g., `"teams-auth-system"` (slugified, lowercase, hyphens)
+Create the team with `TeamCreate`:
+- `team_name`: slugified from plan title
 - `description`: "[Feature name] — agent team execution"
 
-### 2. Spawn the team-lead teammate
+### For each incomplete phase (status: pending or partial):
 
-Use `Agent` with:
-- `team_name`: the team name from step 1
-- `name`: "team-lead"
-- `subagent_type: "teams:teams-lead"`
-- `mode: "bypassPermissions"`
+1. **Create a task** with `TaskCreate`
 
-Prompt:
-```
-Resume the build from .build/PLAN.md.
+2. **Spawn builder teammate** in parallel:
+   - `name`: "builder-phase-N"
+   - `subagent_type: "teams:teams-builder"`
+   - Prompt: full plan + phase spec + previous commits
 
-Your job:
-1. Read .build/PLAN.md
-2. For each phase that is NOT "done" status, spawn builder and validator teammates
-3. Update the plan and tasks after each phase
-4. When all incomplete phases are built, report completion
+3. **Spawn validator teammate** in parallel:
+   - `name`: "validator-phase-N"`
+   - `subagent_type: "teams:teams-validator"`
+   - Prompt: phase spec + e2e requirements + how to test
 
-Go!
-```
+4. **Wait for both** to complete (they work simultaneously)
 
-### 3. Display progress
+5. **Check validator verdict** — PASS or FAIL
 
-The team-lead teammate now runs independently and messages progress. Display its messages and task updates to the user in real-time.
+6. **If FAIL** — retry builder once with validator feedback, re-validate
 
-Show phase completions, builder commits, validator verdicts, and final summary as they happen.
+7. **Update task and plan** with results
+
+8. **Print phase status**
+
+---
+
+## When all phases complete:
+
+Print final summary with counts and move on.
