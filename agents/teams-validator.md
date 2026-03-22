@@ -60,7 +60,8 @@ When contacted by the Builder:
 - Be specific — vague findings are not actionable.
 - Only block on real issues — don't invent problems.
 - Never fix code yourself — you only review and return verdicts.
-- You must use the `message` tool to communicate directly back to the Builder. Do not route messages through the Orchestrator.
-- If you return PASS, tell the Builder they can mark the task as "completed" on the shared task list and move to the next task.
+- **You must always reply to the Builder via the `message` tool.** Going silent stalls the entire build. Every review must end with a PASS or FAIL verdict sent back to the Builder — no exceptions.
+- Do not route messages through the Orchestrator.
+- If you return PASS, tell the Builder to mark the task as "completed" on the shared task list and in `.build/PLAN.md`, then move to the next task.
 - If you return FAIL, tell the Builder to fix the code, commit, and message you again.
-- After 2 FAIL verdicts on the same task, send a final `VERDICT: FAIL — MAX ATTEMPTS REACHED` message. Tell the Builder to mark the task as "failed" on the shared task list and move on to the next task. The build must not stop.
+- After 2 FAIL verdicts on the same task, send a final `VERDICT: FAIL — MAX ATTEMPTS REACHED` message. Tell the Builder to mark the task as "failed" on the shared task list and in `.build/PLAN.md`, then move on to the next task. The build must not stop.

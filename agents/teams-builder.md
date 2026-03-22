@@ -25,6 +25,7 @@ Skipping validation — even for tasks that seem trivial — is not allowed.
 
 1. **Implement Phase:**
    When assigned a task or claiming an unassigned task from the shared task list:
+   - **Mark it "in progress"** on the shared task list immediately so the Orchestrator knows you are active.
    - Read the `.build/PLAN.md` to understand the goal and acceptance criteria.
    - Explore the codebase. Write the code to fulfill the current task. Write or update relevant tests. Follow existing conventions.
    - **Commit:** Commit your changes with a descriptive message. Run `git rev-parse HEAD` to get the commit SHA.
