@@ -78,7 +78,12 @@ Then:
    Output everything — the user is watching.
    ```
 
-3. **Wait for completion** — the Agent call blocks until team-lead finishes. All output displays in real-time.
+3. **Capture and display team-lead output** — spawn the team-lead with Agent, capture its response, and display it to the user:
+   ```
+   [Agent call with the prompt above]
+   [Team-lead response] → display this fully to the user
+   ```
+   The team-lead returns everything it did: phases executed, builder commits, validator verdicts, retries, final summary.
 
 ---
 
