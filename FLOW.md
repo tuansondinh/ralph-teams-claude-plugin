@@ -1,6 +1,6 @@
 # Default Execution Flow
 
-This diagram provides a high-level, abstract overview of how the `/teams:plan` skill operates. The Orchestrator handles planning and user interaction, while the Builder and Validator communicate directly to complete tasks.
+This diagram illustrates how the plugin operates from top to bottom. It shows how the two primary commands (`/teams:plan` and `/teams:run`) feed into the Orchestrator, which then manages the execution loop.
 
 ```mermaid
 flowchart TD
@@ -9,24 +9,34 @@ flowchart TD
     classDef orch fill:#bae1ff,stroke:#5facff,stroke-width:2px,color:#333
     classDef agent fill:#baffc9,stroke:#42d669,stroke-width:2px,color:#333
     classDef doc fill:#ffffba,stroke:#e6e65a,stroke-width:2px,color:#333
+    classDef cmd fill:#f3e8ff,stroke:#c084fc,stroke-width:2px,color:#333
 
-    %% Nodes
+    %% Top Level: User & Commands
     U((👤 User)):::user
+    
+    CmdPlan[⚡ /teams:plan <br> <i>Start new feature</i>]:::cmd
+    CmdRun[⚡ /teams:run <br> <i>Resume existing</i>]:::cmd
+
+    %% Middle Level: Orchestration
     O[🧠 Orchestrator]:::orch
     P[📝 PLAN.md]:::doc
-    B[👷 Builder]:::agent
-    V[🔎 Validator]:::agent
 
-    %% Connections
-    U -- "1. Discuss & Approve" --> O
-    O -. "2. Creates" .-> P
-    O -- "3. Spawns Native Team" --> B & V
-
+    %% Bottom Level: Execution
     subgraph Team[🔄 Task Execution Loop]
         direction LR
-        B <--> |"4. Build ➔ Review ➔ Fix"| V
+        B[👷 Builder]:::agent <--> |"Build ➔ Review ➔ Fix"| V[🔎 Validator]:::agent
     end
 
-    Team -- "5. All Tasks Complete" --> O
-    O -- "6. Final Report" --> U
+    %% Routing
+    U --> CmdPlan
+    U --> CmdRun
+
+    CmdPlan --> |1a. Discuss & Approve| O
+    CmdRun --> |1b. Load existing| O
+
+    O -. "2. Creates / Reads" .-> P
+    O -- "3. Spawns Native Team" --> Team
+
+    Team -- "4. All Tasks Complete" --> O
+    O -- "5. Final Report" --> U
 ```
