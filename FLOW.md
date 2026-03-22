@@ -1,39 +1,32 @@
 # Default Execution Flow
 
-This diagram illustrates the sequential flow for the `/teams:plan` skill, which relies on Native Agent Teams. The Orchestrator drives the high-level plan, while the Builder and Validator operate in a task-completion loop.
+This diagram provides a high-level, abstract overview of how the `/teams:plan` skill operates. The Orchestrator handles planning and user interaction, while the Builder and Validator communicate directly to complete tasks.
 
 ```mermaid
-sequenceDiagram
-    actor User
-    participant Orch as Orchestrator
-    participant Plan as .build/PLAN.md
-    participant Team as Agent Team (Builder + Validator)
+flowchart TD
+    %% Visual Styles
+    classDef user fill:#ffdfba,stroke:#ffb347,stroke-width:2px,color:#333
+    classDef orch fill:#bae1ff,stroke:#5facff,stroke-width:2px,color:#333
+    classDef agent fill:#baffc9,stroke:#42d669,stroke-width:2px,color:#333
+    classDef doc fill:#ffffba,stroke:#e6e65a,stroke-width:2px,color:#333
 
-    %% Planning Phase
-    User->>Orch: /teams:plan
-    Orch->>Plan: Drafts Tasks & Criteria
-    Orch-->>Plan: (Optional AI Review)
-    Orch->>User: Request Approval
-    User->>Orch: Approves
+    %% Nodes
+    U((👤 User)):::user
+    O[🧠 Orchestrator]:::orch
+    P[📝 PLAN.md]:::doc
+    B[👷 Builder]:::agent
+    V[🔎 Validator]:::agent
 
-    %% Execution Phase
-    Orch->>Team: Spawns Builder & Validator
-    Orch->>Team: Adds Tasks to Shared List
+    %% Connections
+    U -- "1. Discuss & Approve" --> O
+    O -. "2. Creates" .-> P
+    O -- "3. Spawns Native Team" --> B & V
 
-    %% Internal Team loop
-    loop For each task
-        Team->>Team: Builder claims & implements task
-        Team->>Team: Builder messages Validator for review
-        alt If FAIL
-            Team->>Team: Validator replies FAIL (max 2)
-            Team->>Team: Builder fixes code
-        else If PASS
-            Team->>Team: Validator replies PASS
-            Team->>Team: Builder marks task complete
-        end
+    subgraph Team[🔄 Task Execution Loop]
+        direction LR
+        B <--> |"4. Build ➔ Review ➔ Fix"| V
     end
 
-    %% Completion
-    Team->>Orch: All Tasks Completed
-    Orch->>User: Final Success Report
+    Team -- "5. All Tasks Complete" --> O
+    O -- "6. Final Report" --> U
 ```
