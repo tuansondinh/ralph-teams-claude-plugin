@@ -110,10 +110,18 @@ When approved, print:
 2. Add all tasks from the plan to the **shared task list** as "pending".
 3. Assign the first task to the Builder to begin execution.
 
-**B. Monitor Progress (Passive Observer):**
+**B. Monitor Progress and Keep Teammates Active:**
 The Builder and Validator communicate directly via the `message` tool — the orchestrator cannot see those exchanges. You can only observe the **shared task list**. Watch for task status changes and reprint the task board each time one occurs.
 
 **The user is not present. Do not pause, ask questions, or wait for input at any point during execution. Run all tasks to completion autonomously. If a task fails after the Validator's maximum pushbacks, log it as failed in `.build/PLAN.md`, then continue with the next task without stopping.**
+
+**Watchdog — prevent idle teammates:**
+If the shared task list has not changed after a reasonable amount of time (no task moving to in-progress or completed):
+1. Check which task is currently in progress and which teammate should be active.
+2. Use the `message` tool to ping that teammate directly:
+   - If no task is in progress and pending tasks remain → ping the Builder: `"There are still pending tasks. Please claim the next task and continue."`
+   - If a task is in progress with no recent update → ping the Builder: `"Are you still working on [task]? Please continue or let me know if you're blocked."`
+3. If the teammate does not respond or progress still stalls, re-assign the task on the shared task list and ping again.
 
 Task board format:
 ```
