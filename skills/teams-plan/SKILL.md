@@ -28,6 +28,12 @@ Discuss with the user. Break the work down into logical tasks/phases.
 
 ## Step 2: Write the Plan
 
+**Task sizing:** Each task should represent a meaningful, self-contained unit of work — something a developer could complete and commit in one focused session. Aim for tasks that touch a coherent slice of functionality.
+
+- **Too small:** "Add a button", "rename a variable", "update one line" — these create noise and slow down validation unnecessarily. Merge them into a larger task.
+- **Too big:** "Build the entire backend", "implement all API routes" — these are too risky to validate as a unit. Split them.
+- **Right size:** "Implement user authentication (signup, login, JWT middleware)", "Build the product listing page with filtering and pagination".
+
 Create `.build/PLAN.md`.
 
 ```markdown
