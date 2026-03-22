@@ -1,5 +1,5 @@
 ---
-name: teams-work
+name: work
 description: "Execute an existing Teams build plan. Use when user says '/teams:work', 'run the teams build', 'execute the plan', 'resume the build', or wants to re-run or continue an existing .build/PLAN.md."
 user-invocable: true
 ---

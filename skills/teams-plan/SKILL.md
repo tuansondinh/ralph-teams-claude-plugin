@@ -1,5 +1,5 @@
 ---
-name: teams-plan
+name: plan
 description: "Plan and build a feature with an agent team. Use when user says '/teams:plan', 'teams plan', 'plan this feature with teams', or wants to plan and build with an agent team. This skill discusses requirements, creates a phased plan, and automatically executes it."
 user-invocable: true
 ---
