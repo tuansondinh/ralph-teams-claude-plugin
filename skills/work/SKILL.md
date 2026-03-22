@@ -4,114 +4,90 @@ description: "Execute an existing Teams build plan. Use when user says '/teams:w
 user-invocable: true
 ---
 
-# Teams: Work
+# Teams: Work (Resume Build)
 
-Execute the build plan in `.build/PLAN.md`. Use this to run or resume a plan that was already created by `/teams:plan`.
-
----
-
-## Before Starting
-
-1. Check `.build/PLAN.md` exists. If not:
-   > "No plan found. Run `/teams:plan` first to create one."
-
-2. Read the full plan.
-
-3. Identify which phases need work:
-   - Run phases with `Status: pending` or `Status: failed`
-   - Skip phases with `Status: done` (unless user explicitly asked to redo)
-   - Resume `Status: in-progress` phases from the beginning (treat as pending)
-
-4. Print the current plan state and tell the user how many phases will run.
+You are the Team Lead. Your job: find an existing `.build/PLAN.md`, resume the build, and spawn a team-lead agent to orchestrate completion.
 
 ---
 
-## Execution Flow
+## Step 1: Find the Plan
 
-You are the Team Lead. Execute every pending/failed phase in order. **Never stop early** — complete all phases regardless of failures.
-
-### For each phase:
-
-**1. Print the progress display**
-
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  TEAMS  Phase N/Total — [Phase Name]
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  ✓  Phase 1: [Name]          [done]
-  ►  Phase 2: [Name]          [building...]
-  ○  Phase 3: [Name]          [pending]
-  ○  Phase 4: [Name]          [pending]
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```bash
+cat .build/PLAN.md
 ```
 
-Icons: `✓` done · `✗` failed · `~` partial · `►` in-progress · `○` pending
+If the file doesn't exist, tell the user:
+> `.build/PLAN.md` not found. Use `/teams:plan` to create a plan first.
 
-**2. Update PLAN.md**
-
-Set the current phase `Status: in-progress`.
-
-**3. Spawn the Builder**
-
-Use the `Agent` tool with `subagent_type: "teams:teams-builder"` and `mode: "bypassPermissions"`.
-
-Pass this prompt:
-```
-=== FULL PLAN ===
-[paste full contents of .build/PLAN.md]
-
-=== YOUR PHASE ===
-[paste the current phase section: goal, tasks, acceptance criteria]
-
-=== PREVIOUS PHASES COMPLETED ===
-[list commit SHAs and brief summaries of what prior phases built]
-```
-
-**4. Spawn the Validator**
-
-Use the `Agent` tool with `subagent_type: "teams:teams-validator"`.
-
-Pass this prompt:
-```
-=== PHASE SPEC ===
-[paste the current phase section: goal, tasks, acceptance criteria]
-
-=== BUILDER'S COMMIT SHA ===
-[commit SHA from builder's BUILDER REPORT]
-```
-
-**5. If FAIL — one retry**
-
-If the validator returns `VERDICT: FAIL`:
-- Spawn a new Builder (`subagent_type: "teams:teams-builder"`) with the validator's findings attached as additional context
-- Add to the builder prompt: `=== VALIDATOR FEEDBACK (apply these fixes) ===\n[findings]`
-- Spawn a new Validator to re-check the new commit
-- This is the **final attempt** — no further retries
-
-**6. Update PLAN.md with result**
-
-Based on the final validator verdict:
-- PASS → `Status: done`
-- FAIL after retry → `Status: partial` and write the validator findings into `Validator Notes:`
-
-**7. Continue to next phase — never stop**
+If it exists, extract:
+- The feature name from the title
+- Total phase count
+- Current phases: which are done, pending, partial, failed?
 
 ---
 
-## Final Summary
+## Step 2: Create Team and Spawn Lead
 
-After all phases are complete, print:
+Print:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  TEAMS  Build Complete
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  ✓  Phase 1: [Name]          [done]
-  ✓  Phase 2: [Name]          [done]
-  ~  Phase 3: [Name]          [partial]
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Done: N   Partial: N   Failed: N
+  TEAMS  Resuming build...
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-If any phases are partial/failed, list the validator notes so the user knows what needs attention.
+Then:
+
+1. **Create a team** using `TeamCreate`:
+   - `team_name`: derive from the plan title the same way as in `/teams:plan`, e.g., `"teams-auth-system"` (slugified, lowercase, hyphens)
+   - `description`: "[Feature name] — agent team execution"
+
+   (If a team with this name already exists from a prior run, `TeamCreate` will reuse it or error — adjust as needed)
+
+2. **Spawn the Team Lead agent** using `Agent`:
+   - `team_name`: the team name
+   - `name`: "team-lead"
+   - `subagent_type: "teams:teams-lead"`
+   - `mode: "bypassPermissions"`
+   - `prompt`:
+   ```
+   Resume the build. Read .build/PLAN.md and continue from where the last run left off.
+
+   Current directory: [working directory]
+   Plan file: .build/PLAN.md
+
+   Your job:
+   1. Read .build/PLAN.md
+   2. For each phase:
+      - If status is "done", skip it
+      - If status is "pending" or "partial", rebuild it
+   3. For each phase to build:
+      - Create a task with TaskCreate
+      - Spawn a builder agent
+      - Spawn a validator
+      - Manage retry if needed
+      - Update task status
+      - Update .build/PLAN.md
+      - Message progress
+   4. After all phases, summarize results
+
+   Go.
+   ```
+
+3. **Return immediately** — the team-lead agent continues autonomously.
+
+Print:
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Team resumed! Team Lead is building...
+  Check messages below for progress updates.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+---
+
+## Notes
+
+- If all phases are done, the team lead will report completion
+- If some phases need rebuilding, they will be re-executed
+- Check `.build/PLAN.md` for real-time progress

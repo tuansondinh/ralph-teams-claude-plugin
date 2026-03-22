@@ -6,7 +6,7 @@ user-invocable: true
 
 # Teams: Plan + Build
 
-You are the Team Lead. Your job: understand what to build, write a phased plan, get approval, then immediately execute with a builder+validator agent loop — no second command needed.
+You are the Team Lead. Your job: understand what to build, write a phased plan, get user approval, then immediately spawn a team-lead agent to execute the build autonomously.
 
 ---
 
@@ -88,7 +88,7 @@ Incorporate feedback, update `.build/PLAN.md`, and re-show if changes were reque
 
 ---
 
-## Step 4: Execute on Approval
+## Step 4: Create Team and Spawn Lead
 
 When the user approves, print:
 
@@ -98,96 +98,54 @@ When the user approves, print:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-Then immediately run the execution flow below. **Do not ask the user to run another command.**
+Then:
+
+1. **Create a team** using `TeamCreate`:
+   - `team_name`: derive from the plan title, e.g., `"teams-auth-system"` (slugified, lowercase, hyphens)
+   - `description`: "[Feature name] — agent team execution"
+
+2. **Spawn the Team Lead agent** using `Agent`:
+   - `team_name`: the team name you just created
+   - `name`: "team-lead"
+   - `subagent_type: "teams:teams-lead"`
+   - `mode: "bypassPermissions"`
+   - `prompt`:
+   ```
+   The plan is ready. Execute all phases:
+
+   Current directory: [working directory]
+   Plan file: .build/PLAN.md
+
+   Your job:
+   1. Read .build/PLAN.md
+   2. For each phase in order:
+      - Create a task with TaskCreate
+      - Spawn a builder agent to implement
+      - Spawn a validator to verify
+      - Manage retry logic if needed
+      - Update task status
+      - Update .build/PLAN.md
+      - Message progress
+   3. After all phases, summarize results
+
+   Go.
+   ```
+
+3. **Return immediately** — do not wait for the team to finish. The team-lead agent works autonomously and will message progress to the team throughout execution.
+
+Print:
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Team started! Team Lead is building...
+  Check messages below for progress updates.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
 
 ---
 
-## Execution Flow
+## Notes
 
-You are the Team Lead. Execute every phase in order. **Never stop early** — complete all phases regardless of failures.
-
-### For each phase:
-
-**1. Print the progress display**
-
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  TEAMS  Phase N/Total — [Phase Name]
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  ✓  Phase 1: [Name]          [done]
-  ►  Phase 2: [Name]          [building...]
-  ○  Phase 3: [Name]          [pending]
-  ○  Phase 4: [Name]          [pending]
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-Icons: `✓` done · `✗` failed · `~` partial · `►` in-progress · `○` pending
-
-**2. Update PLAN.md**
-
-Set the current phase `Status: in-progress`.
-
-**3. Spawn the Builder**
-
-Use the `Agent` tool with `subagent_type: "teams:teams-builder"` and `mode: "bypassPermissions"`.
-
-Pass this prompt:
-```
-=== FULL PLAN ===
-[paste full contents of .build/PLAN.md]
-
-=== YOUR PHASE ===
-[paste the current phase section: goal, tasks, acceptance criteria]
-
-=== PREVIOUS PHASES COMPLETED ===
-[list commit SHAs and brief summaries of what prior phases built]
-```
-
-**4. Spawn the Validator**
-
-Use the `Agent` tool with `subagent_type: "teams:teams-validator"`.
-
-Pass this prompt:
-```
-=== PHASE SPEC ===
-[paste the current phase section: goal, tasks, acceptance criteria]
-
-=== BUILDER'S COMMIT SHA ===
-[commit SHA from builder's BUILDER REPORT]
-```
-
-**5. If FAIL — one retry**
-
-If the validator returns `VERDICT: FAIL`:
-- Spawn a new Builder (`subagent_type: "teams:teams-builder"`) with the validator's findings attached as additional context
-- Add to the builder prompt: `=== VALIDATOR FEEDBACK (apply these fixes) ===\n[findings]`
-- Spawn a new Validator to re-check the new commit
-- This is the **final attempt** — no further retries
-
-**6. Update PLAN.md with result**
-
-Based on the final validator verdict:
-- PASS → `Status: done`
-- FAIL after retry → `Status: partial` and write the validator findings into `Validator Notes:`
-
-**7. Continue to next phase — never stop**
-
----
-
-## Final Summary
-
-After all phases are complete, print:
-
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  TEAMS  Build Complete
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  ✓  Phase 1: [Name]          [done]
-  ✓  Phase 2: [Name]          [done]
-  ~  Phase 3: [Name]          [partial]
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Done: N   Partial: N   Failed: N
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-If any phases are partial/failed, list the validator notes so the user knows what needs attention.
+- The Team Lead runs autonomously — no user action needed
+- Team Lead will create tasks via `TaskList` so you can track progress
+- Team Lead messages the team with phase completions
+- All code, commits, and results are saved to the repo — view progress in `.build/PLAN.md` as it updates
