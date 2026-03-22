@@ -7,7 +7,7 @@ flowchart TD
     %% Entities
     User([User])
     Orchestrator[Orchestrator / Team Lead]
-    Reviewer[AI Reviewer <br>(Codex/Opus)]
+    Reviewer["AI Reviewer <br>(Codex/Opus)"]
     PlanFile[(.build/PLAN.md)]
     TaskList[(Shared Task List)]
     Builder[Builder Agent]
