@@ -9,7 +9,7 @@
   },
   "plugins": [
     {
-      "name": "",
+      "name": "teams",
       "source": "./",
       "description": "Plan a feature with Claude, then execute it using builder and validator agents. Supports both single-plan and multi-phase loop executions.",
       "version": "1.2.1",
