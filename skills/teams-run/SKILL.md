@@ -1,5 +1,5 @@
 ---
-name: run
+name: teams-run
 description: "Resume building a single Teams plan. Orchestrator spawns the native Agent Team and monitors progress task-by-task."
 user-invocable: true
 ---
@@ -17,7 +17,7 @@ cat .build/PLAN.md
 ```
 
 If not found, tell user:
-> `.build/PLAN.md` not found. Use `/teams:plan` to create a plan first.
+> `.build/PLAN.md` not found. Use `/teams-plan` to create a plan first.
 
 ---
 
@@ -62,6 +62,8 @@ Status line appended below the board on each event:
 - Builder messages Validator → `► Task [N]: Validating...`
 - Validator returns FAIL → `⟲ Task [N]: Pushback received. Retrying...`
 - Validator returns PASS → `✓ Task [N]: Complete!`
+
+After each status change, also update the task checkboxes in `.build/PLAN.md` to reflect current state (check off completed tasks).
 
 When all tasks are completed, ask the teammates to shut down, run team cleanup, and print a final success summary:
 ```

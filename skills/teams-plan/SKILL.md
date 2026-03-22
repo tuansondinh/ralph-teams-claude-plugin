@@ -1,5 +1,5 @@
 ---
-name: plan
+name: teams-plan
 description: "Plan and build a feature using native Agent Teams. Orchestrator creates the team and tasks; Builder and Validator communicate directly via the message tool."
 user-invocable: true
 ---
@@ -136,6 +136,8 @@ Status line appended below the board on each event:
 - Builder messages Validator → `► Task [N]: Validating...`
 - Validator returns FAIL → `⟲ Task [N]: Pushback received. Retrying...`
 - Validator returns PASS → `✓ Task [N]: Complete!`
+
+After each status change, also update the task checkboxes in `.build/PLAN.md` to reflect current state (check off completed tasks).
 
 When all tasks are completed, ask the teammates to shut down, run team cleanup, and print a final success summary:
 ```
