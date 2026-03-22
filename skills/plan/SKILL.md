@@ -1,6 +1,6 @@
 ---
 name: plan
-description: "Plan and build a feature with an agent team. Builder and validator work in parallel."
+description: "Plan and build a feature with an agent team. Builder runs first, then validator reviews and pushes back if needed."
 user-invocable: true
 ---
 
@@ -11,7 +11,7 @@ You are the orchestrator. Your job:
 2. Write a phased plan
 3. Collect e2e testing requirements from user
 4. Get approval
-5. Create team and orchestrate builder + validator in parallel for each phase
+5. Create team and orchestrate builder then validator for each phase
 
 ---
 
@@ -137,18 +137,21 @@ Read `Mode:` from `.build/PLAN.md` and execute accordingly:
 1. Create a task with `TaskCreate`
 2. Spawn builder teammate (`name`: "builder-phase-N", `subagent_type: "teams:teams-builder"`)
    - Prompt: full plan + phase spec + previous phase summaries
-3. Spawn validator teammate alongside the builder (`name`: "validator-phase-N", `subagent_type: "teams:teams-validator"`)
+3. Wait for builder to complete and get its report (commit SHA).
+4. Spawn validator teammate (`name`: "validator-phase-N", `subagent_type: "teams:teams-validator"`)
    - Prompt:
      ```
+     === BUILDER REPORT ===
+     [Builder's commit SHA and summary]
+
      === PHASE SPEC ===
      [current phase: name, goal, tasks, acceptance criteria]
 
      === E2E TESTING REQUIREMENTS ===
      [copy the full ## E2E Testing Requirements section from .build/PLAN.md verbatim]
      ```
-4. Wait for both to complete
-5. Check verdict — PASS or FAIL. If FAIL — retry builder once with feedback, re-validate
-6. Update task and plan with results. Print phase status. Move to next phase.
+5. Wait for the validator to complete. The validator will push back to the builder directly if needed.
+6. Check validator verdict — PASS or FAIL. Update task and plan with results. Print phase status. Move to next phase.
 
 ---
 
@@ -159,17 +162,22 @@ Read `Mode:` from `.build/PLAN.md` and execute accordingly:
    - Create a task with `TaskCreate`
    - Spawn builder teammate (`name`: "builder-phase-N", `subagent_type: "teams:teams-builder"`)
      - Prompt: full plan + phase spec + previous phase summaries
-   - Spawn validator teammate alongside the builder (`name`: "validator-phase-N", `subagent_type: "teams:teams-validator"`)
+   - Wait for the builder to complete and get its report (commit SHA).
+   - Spawn validator teammate (`name`: "validator-phase-N", `subagent_type: "teams:teams-validator"`)
      - Prompt:
        ```
+       === BUILDER REPORT ===
+       [Builder's commit SHA and summary]
+
        === PHASE SPEC ===
        [current phase: name, goal, tasks, acceptance criteria]
 
        === E2E TESTING REQUIREMENTS ===
        [copy the full ## E2E Testing Requirements section from .build/PLAN.md verbatim]
        ```
+   - Wait for the validator to complete. (The validator pushes back to the builder directly if needed).
 3. Wait for **all phases in the group** to complete before starting the next group
-4. For each completed phase: check verdict, retry if FAIL, update task and plan
+4. For each completed phase: check validator verdict (PASS or FAIL), update task and plan. The orchestrator does not push back.
 5. Print group status. Move to next group.
 
 ---

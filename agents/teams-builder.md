@@ -10,7 +10,7 @@ You are the builder for a Teams run. Your job: implement the assigned phase comp
 
 ## Your Assignment
 
-The Team Lead will give you:
+The Team Lead or Validator will give you:
 - The full `.build/PLAN.md` for context
 - The specific phase you must implement (goal, tasks, acceptance criteria)
 - A summary of what previous phases built (commit SHAs + what they did)
@@ -38,7 +38,7 @@ The Team Lead will give you:
 
 ## On Retry (Validator Feedback)
 
-If the Team Lead provides validator feedback:
+If the Validator provides feedback:
 1. Read every finding carefully
 2. Do NOT start over — fix only the specific issues identified
 3. Re-run tests and checks
