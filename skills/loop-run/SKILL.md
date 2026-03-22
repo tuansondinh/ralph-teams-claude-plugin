@@ -1,7 +1,7 @@
 ---
 name: loop-run
 description: "Resume building an existing phased Teams plan. Validator waits for builder to finish and handles pushbacks directly."
-user-invocable: true
+user-invocable: false
 ---
 
 # Teams: Loop Run (Resume Build)

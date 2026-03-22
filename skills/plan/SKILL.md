@@ -111,11 +111,39 @@ When approved, print:
 3. Assign the first task to the Builder to begin execution.
 
 **B. Monitor and Route Progress to User:**
-While the Builder and Validator are working, you act as the observer to keep the user informed.
-1. When the Builder begins a task, print: `► Task [N]: Building...`
-2. When the Builder uses the `message` tool to ask the Validator for a review, print: `► Task [N]: Validating...`
-3. When the Validator uses the `message` tool to push back with a `FAIL`, print: `⟲ Task [N]: Pushback received. Retrying...`
-4. When the Validator returns `PASS` and the task is marked completed on the shared task list, print: `✓ Task [N]: Complete!`
-   - If there are remaining tasks, ensure the Builder claims the next task.
+After each status change, reprint the full task board followed by the current status line. This replaces the previous output so the user always sees the complete picture.
 
-When all tasks on the shared task list are "completed", ask the teammates to shut down, run team cleanup, and print a final success summary to the user.
+Task board format:
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  TEAMS  [N of M tasks complete]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ✓  Task 1: Project Setup          [done]
+  ►  Task 2: Auth System            [building...]
+  ○  Task 3: API Routes             [pending]
+  ○  Task 4: Frontend               [pending]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+Status symbols:
+- `✓` — completed (Validator returned PASS)
+- `►` — active (Builder is working or Validator is reviewing)
+- `⟲` — retrying (Validator returned FAIL, Builder is fixing)
+- `○` — pending
+
+Status line appended below the board on each event:
+- Builder starts a task → `► Task [N]: Building...`
+- Builder messages Validator → `► Task [N]: Validating...`
+- Validator returns FAIL → `⟲ Task [N]: Pushback received. Retrying...`
+- Validator returns PASS → `✓ Task [N]: Complete!`
+
+When all tasks are completed, ask the teammates to shut down, run team cleanup, and print a final success summary:
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  TEAMS  All [M] tasks complete!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ✓  Task 1: ...
+  ✓  Task 2: ...
+  ...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```

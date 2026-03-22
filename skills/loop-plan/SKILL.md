@@ -1,7 +1,7 @@
 ---
 name: loop-plan
 description: "Plan and build a feature with an agent team. Builder runs first, then validator reviews and pushes back if needed."
-user-invocable: true
+user-invocable: false
 ---
 
 # Teams: Loop Plan + Build
