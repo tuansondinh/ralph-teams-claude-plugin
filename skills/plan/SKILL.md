@@ -1,6 +1,6 @@
 ---
 name: plan
-description: "Plan and build a feature using a single Builder + Validator team. No looping phases."
+description: "Plan and build a feature. Orchestrator spawns Builder and Validator together; Builder tackles tasks one by one and validates directly."
 user-invocable: true
 ---
 
@@ -8,10 +8,10 @@ user-invocable: true
 
 You are the planner and orchestrator. Your job:
 1. Discuss the feature with the user
-2. Lay out a plan with acceptance criteria and logical phases
+2. Lay out a plan with acceptance criteria and tasks
 3. Collect e2e testing requirements
 4. Get approval
-5. Execute the plan by spawning a Builder, then a Validator (who can communicate directly with the Builder without respawning).
+5. Spawn the Validator (on standby) and the Builder. The Builder will execute tasks one by one, communicating directly with the Validator.
 
 ---
 
@@ -19,13 +19,13 @@ You are the planner and orchestrator. Your job:
 
 Ask: **"What do you want to build?"**
 
-Discuss with the user. If unclear, ask 2-3 clarifying questions. Break the work down into logical phases in your mind, then proceed to write the plan.
+Discuss with the user. If unclear, ask 2-3 clarifying questions. Break the work down into logical tasks/phases.
 
 ---
 
 ## Step 2: Write the Plan
 
-Create `.build/PLAN.md`. Lay out the acceptance criteria and the phases of work.
+Create `.build/PLAN.md`. Lay out the acceptance criteria and the tasks.
 
 ```markdown
 # Teams Plan: [Feature Name]
@@ -37,21 +37,14 @@ Mode: single
 ## Summary
 [What we're building - 2-4 sentences]
 
-## Phases / Breakdown
-### Phase 1: [Name]
-- [ ] Task 1
-- [ ] Task 2
-Acceptance Criteria:
+## Tasks
+1. [ ] Task 1: [Description]
+2. [ ] Task 2: [Description]
+3. [ ] Task 3: [Description]
+
+## Acceptance Criteria
 - [Criterion 1]
-
-### Phase 2: [Name]
-- [ ] Task 1
-- [ ] Task 2
-Acceptance Criteria:
 - [Criterion 2]
-
-## Global Acceptance Criteria
-- All phase criteria met
 - Tests pass
 - E2E tests pass
 
@@ -99,22 +92,24 @@ When approved, print:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-1. Create a task with `TaskCreate`
-2. Spawn builder teammate (`name`: "builder", `subagent_type: "teams:teams-builder"`)
-   - Prompt: full plan
-3. Wait for builder to complete. **IMPORTANT: Extract the `task_id` returned in the builder's output.**
-4. Spawn validator teammate (`name`: "validator", `subagent_type: "teams:teams-validator"`)
-   - Prompt:
-     ```
-     === BUILDER REPORT ===
-     [Builder's commit SHA and summary]
-     BUILDER TASK ID: [Insert the builder's task_id here]
+1. **Spawn the Validator on standby:**
+   Use the `Task` tool (or `TaskCreate`) with `subagent_type: "teams:teams-validator"`.
+   Prompt: "You are the Validator for this feature. Please acknowledge and stand by. I will pass your task_id to the Builder, who will contact you to review tasks one by one."
+   **Wait for the Validator to return, and extract its `task_id`.**
 
-     === PLAN SPEC ===
-     [copy the Phases and Acceptance Criteria]
+2. **Spawn the Builder:**
+   Use the `Task` tool with `subagent_type: "teams:teams-builder"`.
+   Prompt:
+   ```
+   === PLAN SPEC ===
+   [Copy the full Plan here: Tasks, Acceptance Criteria, E2E Requirements]
 
-     === E2E TESTING REQUIREMENTS ===
-     [copy the full ## E2E Testing Requirements section from .build/PLAN.md verbatim]
-     ```
-5. Wait for the validator to complete. (The validator will use the `task_id` to communicate feedback directly to the existing builder in parallel, without respawning).
-6. Check validator verdict — PASS or FAIL. Update task and plan with results. Print final status.
+   === VALIDATOR TASK ID ===
+   [Insert the Validator's task_id here]
+   ```
+
+3. **Wait for the Builder to complete.** 
+   (The Builder will loop through the tasks one by one, using the Validator's `task_id` to directly request reviews for each task until everything is finished).
+
+4. **Complete:** 
+   When the Builder returns its final report, the plan is complete. Print the final status to the user.

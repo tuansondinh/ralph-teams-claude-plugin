@@ -1,12 +1,12 @@
 ---
 name: run
-description: "Resume building a single Teams plan. Validator resumes builder session and handles pushbacks directly."
+description: "Resume building a single Teams plan. Orchestrator spawns Builder and Validator together; Builder tackles tasks one by one and validates directly."
 user-invocable: true
 ---
 
 # Teams: Run (Resume Build)
 
-You are the orchestrator. Your job: resume an existing build by running the builder then the validator (who communicates directly with the builder without respawning).
+You are the orchestrator. Your job: resume an existing build by spawning the Validator on standby, then spawning the Builder to finish the tasks.
 
 ---
 
@@ -23,27 +23,32 @@ If not found, tell user:
 
 ## Step 2: Build
 
-Create the team with `TeamCreate`:
-- `team_name`: slugified from plan title
-- `description`: "[Feature name] — agent team execution"
+When approved, print:
 
-1. Create a task with `TaskCreate`
-2. Spawn builder teammate (`name`: "builder", `subagent_type: "teams:teams-builder"`)
-   - Prompt: full plan
-3. Wait for the builder to complete and return its report. **IMPORTANT: Extract the `task_id` returned in the builder's output.**
-4. Spawn validator teammate (`name`: "validator", `subagent_type: "teams:teams-validator"`)
-   - Prompt:
-     ```
-     === BUILDER REPORT ===
-     [builder's report]
-     BUILDER TASK ID: [Insert the builder's task_id here]
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  TEAMS  Resuming build...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
 
-     === PLAN SPEC ===
-     [copy the Phases and Acceptance Criteria]
+1. **Spawn the Validator on standby:**
+   Use the `Task` tool (or `TaskCreate`) with `subagent_type: "teams:teams-validator"`.
+   Prompt: "You are the Validator for this feature. Please acknowledge and stand by. I will pass your task_id to the Builder, who will contact you to review tasks one by one."
+   **Wait for the Validator to return, and extract its `task_id`.**
 
-     === E2E TESTING REQUIREMENTS ===
-     [copy the full ## E2E Testing Requirements section from .build/PLAN.md verbatim]
-     ```
-5. Wait for the validator to complete. The validator will independently push back to the existing builder (using the `task_id` to prevent respawning, max 2 times) if there are issues. The orchestrator does NOT evaluate or push back.
-6. Check final verdict from validator — PASS or FAIL.
-7. Update task and plan with results. Print final status.
+2. **Spawn the Builder:**
+   Use the `Task` tool with `subagent_type: "teams:teams-builder"`.
+   Prompt:
+   ```
+   === PLAN SPEC ===
+   [Copy the full Plan here: Tasks, Acceptance Criteria, E2E Requirements]
+
+   === VALIDATOR TASK ID ===
+   [Insert the Validator's task_id here]
+   ```
+
+3. **Wait for the Builder to complete.** 
+   (The Builder will loop through the remaining tasks one by one, using the Validator's `task_id` to directly request reviews for each task until everything is finished).
+
+4. **Complete:** 
+   When the Builder returns its final report, the plan is complete. Print the final status to the user.
