@@ -15,15 +15,15 @@ Add to your `~/.claude/settings.json`:
 ```json
 {
   "extraKnownMarketplaces": {
-    "ralph-teams": {
+    "ralph-teams-claude-plugin": {
       "source": {
         "source": "github",
-        "repo": "tuansondinh/ralph-teams"
+        "repo": "tuansondinh/ralph-teams-claude-plugin"
       }
     }
   },
   "enabledPlugins": {
-    "teams@ralph-teams": true
+    "teams@ralph-teams-claude-plugin": true
   }
 }
 ```
