@@ -1,12 +1,12 @@
 ---
 name: run
-description: "Resume building a single Teams plan. Orchestrator spawns Builder and Validator in one go, keeps them alive, and tracks progress task-by-task."
+description: "Resume building a single Teams plan. Orchestrator spawns the native Agent Team and monitors progress task-by-task."
 user-invocable: true
 ---
 
 # Teams: Run (Resume Build)
 
-You are the orchestrator. Your job: resume an existing build by spawning the Builder and Validator (in one go), and driving the execution task-by-task, outputting progress to the user (Building, Validating, Retrying/Pushback).
+You are the orchestrator and team lead. Your job: resume an existing build by spawning the Builder and Validator as a native Agent Team, and driving the execution task-by-task by monitoring the shared task list, outputting progress to the user (Building, Validating, Retrying/Pushback).
 
 ---
 
@@ -31,40 +31,17 @@ When approved, print:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-**A. Spawn the Team in one go:**
-1. Use `Task` tool (`subagent_type: "teams:teams-builder"`) with prompt: 
-   *"You are the Builder. Acknowledge and stand by. I will assign you tasks one by one."*
-   Extract `BUILDER_TASK_ID`.
-2. Use `Task` tool (`subagent_type: "teams:teams-validator"`) with prompt: 
-   *"You are the Validator. Acknowledge and stand by. I will ask you to review tasks one by one."*
-   Extract `VALIDATOR_TASK_ID`.
+**A. Spawn the Team:**
+1. Instruct the system to create an agent team containing a `teams-builder` and a `teams-validator`.
+2. Add all incomplete tasks from the plan to the **shared task list** as "pending".
+3. Assign the first incomplete task to the Builder to resume execution.
 
-**B. Execute Task by Task:**
-For each incomplete task in `.build/PLAN.md`:
+**B. Monitor and Route Progress to User:**
+While the Builder and Validator are working, you act as the observer to keep the user informed.
+1. When the Builder begins a task, print: `► Task [N]: Building...`
+2. When the Builder uses the `message` tool to ask the Validator for a review, print: `► Task [N]: Validating...`
+3. When the Validator uses the `message` tool to push back with a `FAIL`, print: `⟲ Task [N]: Pushback received. Retrying...`
+4. When the Validator returns `PASS` and the task is marked completed on the shared task list, print: `✓ Task [N]: Complete!`
+   - If there are remaining tasks, ensure the Builder claims the next task.
 
-1. **Building:**
-   Print to user: `► Task [N]: Building...`
-   Send to Builder (`task_id: BUILDER_TASK_ID`): 
-   *"Implement Task [N]: [Description]. Here is the full plan context: [Plan]. When done, commit and return the SHA."*
-   Wait for Builder.
-
-2. **Validating:**
-   Print to user: `► Task [N]: Validating...`
-   Send to Validator (`task_id: VALIDATOR_TASK_ID`):
-   *"Builder finished Task [N]. Commit SHA: [SHA]. Please review against the plan criteria and return PASS or FAIL with feedback."*
-   Wait for Validator.
-
-3. **Pushbacks / Retries (if FAIL):**
-   If Validator returns FAIL:
-   Print to user: `⟲ Task [N]: Pushback received. Retrying...`
-   Send to Builder (`task_id: BUILDER_TASK_ID`):
-   *"Validator returned FAIL with this feedback: [Validator Feedback]. Please fix, commit, and return new SHA."*
-   Wait for Builder, then loop back to **Validating** (Max 2 pushbacks).
-
-4. **Completion:**
-   If Validator returns PASS (or max retries reached):
-   Print to user: `✓ Task [N]: Complete!`
-   Update `.build/PLAN.md` to check off the task.
-   Move to the next task.
-
-When all tasks are done, print a final success summary to the user.
+When all tasks on the shared task list are "completed", ask the teammates to shut down, run team cleanup, and print a final success summary to the user.
