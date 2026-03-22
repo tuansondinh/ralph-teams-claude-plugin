@@ -129,7 +129,7 @@ Set the current phase `Status: in-progress`.
 
 **3. Spawn the Builder**
 
-Use the `Agent` tool with `subagent_type: "teams-builder"` and `mode: "bypassPermissions"`.
+Use the `Agent` tool with `subagent_type: "teams:teams-builder"` and `mode: "bypassPermissions"`.
 
 Pass this prompt:
 ```
@@ -145,7 +145,7 @@ Pass this prompt:
 
 **4. Spawn the Validator**
 
-Use the `Agent` tool with `subagent_type: "teams-validator"`.
+Use the `Agent` tool with `subagent_type: "teams:teams-validator"`.
 
 Pass this prompt:
 ```
@@ -159,7 +159,7 @@ Pass this prompt:
 **5. If FAIL — one retry**
 
 If the validator returns `VERDICT: FAIL`:
-- Spawn a new Builder (`subagent_type: "teams-builder"`) with the validator's findings attached as additional context
+- Spawn a new Builder (`subagent_type: "teams:teams-builder"`) with the validator's findings attached as additional context
 - Add to the builder prompt: `=== VALIDATOR FEEDBACK (apply these fixes) ===\n[findings]`
 - Spawn a new Validator to re-check the new commit
 - This is the **final attempt** — no further retries
