@@ -6,7 +6,11 @@ user-invocable: true
 
 # Teams: Work (Resume Build)
 
-You are the Team Lead. Your job: find an existing `.build/PLAN.md`, resume the build, and orchestrate builder and validator teammates for incomplete phases.
+You are a skill that resumes builds. Your job:
+1. Find the existing `.build/PLAN.md`
+2. Create a team and spawn the team-lead teammate
+3. Display progress as the team works
+4. Return when done
 
 ---
 
@@ -26,7 +30,7 @@ If it exists, extract:
 
 ---
 
-## Step 2: Create Team and Resume
+## Step 2: Create Team and Spawn Team Lead
 
 Print:
 
@@ -36,83 +40,35 @@ Print:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-Then orchestrate the build for incomplete phases:
-
 ### 1. Create the team
 
 Use `TeamCreate`:
-- `team_name`: derive from the plan title the same way as in `/teams:plan`, e.g., `"teams-auth-system"` (slugified, lowercase, hyphens)
+- `team_name`: derived from plan title, e.g., `"teams-auth-system"` (slugified, lowercase, hyphens)
 - `description`: "[Feature name] — agent team execution"
 
-### 2. For each phase
+### 2. Spawn the team-lead teammate
 
-**Skip if done**: if phase `Status: done`, print and continue to next phase.
-
-**Resume if pending or partial**: if `Status: pending` or `Status: partial`, orchestrate:
-
-Print the phase header:
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Phase N: [Phase Name] — resuming
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-**a) Create a task** using `TaskCreate`:
-```
-{
-  "subject": "Build Phase N: [Phase Name]",
-  "description": "[phase goal and acceptance criteria]"
-}
-```
-
-**b) Spawn the builder** using `Agent`:
-- `team_name`: the team name
-- `name`: `"builder-phase-N"`
-- `subagent_type: "teams:teams-builder"`
+Use `Agent` with:
+- `team_name`: the team name from step 1
+- `name`: "team-lead"
+- `subagent_type: "teams:teams-lead"`
 - `mode: "bypassPermissions"`
-- `prompt`:
+
+Prompt:
 ```
-=== FULL PLAN ===
-[entire .build/PLAN.md contents]
+Resume the build from .build/PLAN.md.
 
-=== YOUR PHASE ===
-[current phase: goal, tasks, acceptance criteria]
+Your job:
+1. Read .build/PLAN.md
+2. For each phase that is NOT "done" status, spawn builder and validator teammates
+3. Update the plan and tasks after each phase
+4. When all incomplete phases are built, report completion
 
-=== PREVIOUS PHASES COMPLETED ===
-[list of prior phase commit SHAs and summaries, or "none"]
-```
-
-Display builder output to the user.
-
-**c) Spawn the validator** using `Agent`:
-- `team_name`: the team name
-- `name`: `"validator-phase-N"`
-- `subagent_type: "teams:teams-validator"`
-- `prompt`:
-```
-=== PHASE SPEC ===
-[current phase: goal, tasks, acceptance criteria]
-
-=== BUILDER'S COMMIT SHA ===
-[commit SHA from builder report]
+Go!
 ```
 
-**d) Check the verdict** — extract `VERDICT: PASS` or `VERDICT: FAIL`.
+### 3. Display progress
 
-**e) If FAIL — retry once**:
-- Spawn a new builder with validator findings
-- Get new commit SHA
-- Re-validate
-- Final attempt
+The team-lead teammate now runs independently and messages progress. Display its messages and task updates to the user in real-time.
 
-**f) Update task and plan**:
-- `TaskUpdate` to mark task `status: "completed"`
-- Update `.build/PLAN.md`:
-  - Set phase `Status: done` (if PASS) or `Status: partial` (if FAIL after retry)
-  - Add validator notes if FAIL
-
-Print phase result.
-
-### 3. After all phases
-
-Print final summary with completion counts.
+Show phase completions, builder commits, validator verdicts, and final summary as they happen.
