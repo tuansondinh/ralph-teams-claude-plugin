@@ -1,5 +1,5 @@
 {
-  "name": "ralph-teams",
+  "name": "ralph-teams-claude-plugin",
   "owner": {
     "name": "tuansondinh"
   },
@@ -15,8 +15,7 @@
       "version": "1.0.0",
       "keywords": ["agents", "teams", "builder", "validator", "planning", "automation"],
       "category": "productivity",
-      "skills": "./skills/",
-      "agents": "./agents/"
+      "skills": "./skills/"
     }
   ]
 }
