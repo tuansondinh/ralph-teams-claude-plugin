@@ -11,9 +11,10 @@ flowchart TD
     classDef doc fill:#ffffba,stroke:#e6e65a,stroke-width:2px,color:#333
     classDef cmd fill:#f3e8ff,stroke:#c084fc,stroke-width:2px,color:#333
 
-    %% Top Level: User & Commands
+    %% Top Level: User
     U((👤 User)):::user
     
+    %% Commands
     CmdPlan[⚡ /teams:plan <br> <i>Start new feature</i>]:::cmd
     CmdRun[⚡ /teams:run <br> <i>Resume existing</i>]:::cmd
 
@@ -27,16 +28,17 @@ flowchart TD
         B[👷 Builder]:::agent <--> |"Build ➔ Review ➔ Fix"| V[🔎 Validator]:::agent
     end
 
-    %% Routing
+    %% Routing (Top to Bottom)
     U --> CmdPlan
     U --> CmdRun
 
-    CmdPlan --> |1a. Discuss & Approve| O
-    CmdRun --> |1b. Load existing| O
+    CmdPlan --> |"1a. Discuss & Approve"| O
+    CmdRun --> |"1b. Load existing"| O
 
     O -. "2. Creates / Reads" .-> P
     O -- "3. Spawns Native Team" --> Team
 
+    %% Final Report loops back
     Team -- "4. All Tasks Complete" --> O
     O -- "5. Final Report" --> U
 ```
