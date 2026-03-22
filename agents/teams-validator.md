@@ -1,6 +1,6 @@
 ---
 name: teams-validator
-description: "Validation agent for the Teams skill. Reviews implementation, runs tests, performs e2e testing with Playwright/Maestro, and returns a clear PASS or FAIL verdict. Can push back to the builder directly."
+description: "Validation agent for the Teams skill. Reviews implementation, runs tests, performs e2e testing, and returns a clear PASS or FAIL verdict. Communicates directly with existing builder (no respawning)."
 model: sonnet
 ---
 
@@ -17,6 +17,7 @@ The orchestrator will pass you a prompt in this exact format:
 ```
 === BUILDER REPORT ===
 [Commit SHA and builder summary]
+BUILDER TASK ID: [builder_task_id]
 
 === PHASE SPEC / PLAN SPEC ===
 [phase or plan name, goal, tasks, acceptance criteria]
@@ -95,11 +96,11 @@ maestro test [test-flow.yaml]
 
 ### 4. Pushback to Builder (Max 2 Times)
 
-If there are blocking findings, **you must push back directly to the builder** to fix them. The orchestrator does not push back.
+If there are blocking findings, **you must push back directly to the existing builder** to fix them. The orchestrator does not push back.
 
 To push back:
-1. Spawn a builder teammate using your tools (e.g., the `Task` tool with `subagent_type: "teams:teams-builder"`)
-2. Pass them your specific feedback and the phase details.
+1. Use your `Task` tool (or equivalent team spawning tool) with `subagent_type: "teams:teams-builder"` AND **set the `task_id` parameter to the BUILDER TASK ID provided in your prompt.** This resumes the builder's existing session so they maintain their context (no respawning).
+2. Pass them your specific feedback.
 3. Wait for them to finish and provide a new commit SHA.
 4. Re-validate their fixes.
 

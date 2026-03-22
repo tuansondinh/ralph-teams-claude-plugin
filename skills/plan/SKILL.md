@@ -6,12 +6,12 @@ user-invocable: true
 
 # Teams: Plan + Build (Single Plan)
 
-You are the orchestrator. Your job:
-1. Understand what to build
-2. Write a single plan
-3. Collect e2e testing requirements from user
+You are the planner and orchestrator. Your job:
+1. Discuss the feature with the user
+2. Lay out a plan with acceptance criteria and logical phases
+3. Collect e2e testing requirements
 4. Get approval
-5. Create team and orchestrate the builder, then validator
+5. Execute the plan by spawning a Builder, then a Validator (who can communicate directly with the Builder without respawning).
 
 ---
 
@@ -19,13 +19,13 @@ You are the orchestrator. Your job:
 
 Ask: **"What do you want to build?"**
 
-If unclear, ask 2-3 clarifying questions. Otherwise proceed.
+Discuss with the user. If unclear, ask 2-3 clarifying questions. Break the work down into logical phases in your mind, then proceed to write the plan.
 
 ---
 
 ## Step 2: Write the Plan
 
-Create `.build/PLAN.md`.
+Create `.build/PLAN.md`. Lay out the acceptance criteria and the phases of work.
 
 ```markdown
 # Teams Plan: [Feature Name]
@@ -37,16 +37,21 @@ Mode: single
 ## Summary
 [What we're building - 2-4 sentences]
 
-## Goal
-[What this plan accomplishes]
-
-## Tasks
+## Phases / Breakdown
+### Phase 1: [Name]
 - [ ] Task 1
 - [ ] Task 2
-
-## Acceptance Criteria
+Acceptance Criteria:
 - [Criterion 1]
+
+### Phase 2: [Name]
+- [ ] Task 1
+- [ ] Task 2
+Acceptance Criteria:
 - [Criterion 2]
+
+## Global Acceptance Criteria
+- All phase criteria met
 - Tests pass
 - E2E tests pass
 
@@ -97,18 +102,19 @@ When approved, print:
 1. Create a task with `TaskCreate`
 2. Spawn builder teammate (`name`: "builder", `subagent_type: "teams:teams-builder"`)
    - Prompt: full plan
-3. Wait for builder to complete and get its report (commit SHA).
+3. Wait for builder to complete. **IMPORTANT: Extract the `task_id` returned in the builder's output.**
 4. Spawn validator teammate (`name`: "validator", `subagent_type: "teams:teams-validator"`)
    - Prompt:
      ```
      === BUILDER REPORT ===
      [Builder's commit SHA and summary]
+     BUILDER TASK ID: [Insert the builder's task_id here]
 
      === PLAN SPEC ===
-     [copy the Goal, Tasks, and Acceptance Criteria]
+     [copy the Phases and Acceptance Criteria]
 
      === E2E TESTING REQUIREMENTS ===
      [copy the full ## E2E Testing Requirements section from .build/PLAN.md verbatim]
      ```
-5. Wait for the validator to complete. The validator will push back to the builder directly if needed.
+5. Wait for the validator to complete. (The validator will use the `task_id` to communicate feedback directly to the existing builder in parallel, without respawning).
 6. Check validator verdict — PASS or FAIL. Update task and plan with results. Print final status.
