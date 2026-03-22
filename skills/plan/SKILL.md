@@ -109,9 +109,10 @@ Then:
    - `name`: "team-lead"
    - `subagent_type: "teams:teams-lead"`
    - `mode: "bypassPermissions"`
+   - Do NOT use `run_in_background` (let it run synchronously)
    - `prompt`:
    ```
-   The plan is ready. Execute all phases:
+   The plan is ready. Execute all phases. Be verbose about what you're doing.
 
    Current directory: [working directory]
    Plan file: .build/PLAN.md
@@ -119,27 +120,22 @@ Then:
    Your job:
    1. Read .build/PLAN.md
    2. For each phase in order:
+      - Print: "Phase N: [name] — starting"
       - Create a task with TaskCreate
       - Spawn a builder agent to implement
+      - Print the builder's work and commit SHA
       - Spawn a validator to verify
-      - Manage retry logic if needed
+      - Print the validator's verdict
+      - If FAIL: retry builder, show new commit, re-validate
       - Update task status
       - Update .build/PLAN.md
-      - Message progress
-   3. After all phases, summarize results
+      - Print phase result
+   3. After all phases, print final summary with counts
 
-   Go.
+   Output everything — the user is watching.
    ```
 
-3. **Return immediately** — do not wait for the team to finish. The team-lead agent works autonomously and will message progress to the team throughout execution.
-
-Print:
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Team started! Team Lead is building...
-  Check messages below for progress updates.
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
+3. **Wait for completion** — the Agent call blocks until team-lead finishes. All output displays in real-time as the team works.
 
 ---
 

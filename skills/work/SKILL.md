@@ -49,9 +49,10 @@ Then:
    - `name`: "team-lead"
    - `subagent_type: "teams:teams-lead"`
    - `mode: "bypassPermissions"`
+   - Do NOT use `run_in_background` (let it run synchronously)
    - `prompt`:
    ```
-   Resume the build. Read .build/PLAN.md and continue from where the last run left off.
+   Resume the build. Read .build/PLAN.md and continue from where the last run left off. Be verbose.
 
    Current directory: [working directory]
    Plan file: .build/PLAN.md
@@ -59,30 +60,25 @@ Then:
    Your job:
    1. Read .build/PLAN.md
    2. For each phase:
-      - If status is "done", skip it
-      - If status is "pending" or "partial", rebuild it
+      - If status is "done", print and skip it
+      - If status is "pending" or "partial", print "[phase] — rebuilding"
    3. For each phase to build:
+      - Print: "Phase N: [name] — starting"
       - Create a task with TaskCreate
       - Spawn a builder agent
+      - Print builder's commit SHA
       - Spawn a validator
-      - Manage retry if needed
+      - Print validator's verdict
+      - If FAIL: retry builder with feedback, re-validate, print result
       - Update task status
       - Update .build/PLAN.md
-      - Message progress
-   4. After all phases, summarize results
+      - Print phase result
+   4. After all phases, print final summary
 
-   Go.
+   Output everything — the user is watching.
    ```
 
-3. **Return immediately** — the team-lead agent continues autonomously.
-
-Print:
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Team resumed! Team Lead is building...
-  Check messages below for progress updates.
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
+3. **Wait for completion** — the Agent call blocks until team-lead finishes. All output displays in real-time.
 
 ---
 

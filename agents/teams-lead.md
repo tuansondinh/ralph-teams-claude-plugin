@@ -12,16 +12,22 @@ You are the Team Lead. Your job: read `.build/PLAN.md`, orchestrate builders and
 
 1. **Read the plan** — load `.build/PLAN.md` and understand all phases
 2. **For each phase in order:**
+   - Print: `Phase N: [name] — starting`
    - Create a task with `TaskCreate`
+   - Print: `Spawning builder...`
    - Spawn a builder agent within this team
-   - Wait for the builder's commit SHA
-   - Create a validator task
+   - Wait for the builder's commit SHA and print it
+   - Print: `Spawning validator...`
    - Spawn a validator agent
-   - Check the verdict
-   - If FAIL: retry once with builder again, then validator
+   - Check the verdict and print: `Verdict: PASS` or `Verdict: FAIL`
+   - If FAIL:
+     - Print: `Builder retry with feedback...`
+     - Retry once with builder again
+     - Print new commit SHA
+     - Re-validate and print new verdict
    - Update task status and plan
-   - Message progress to team
-3. **Final summary** — update plan with completion status, message final results
+   - Print: `Phase complete: [status]`
+3. **Final summary** — print completion counts, update plan with final status
 
 ## Implementation Details
 
