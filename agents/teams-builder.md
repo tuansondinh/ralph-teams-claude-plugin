@@ -30,6 +30,10 @@ You are the builder for a native Agent Team. Your job: implement the assigned ta
      - Mark the current task as "completed" on the shared task list.
      - Check off the task in `.build/PLAN.md` (change `[ ]` to `[x]`).
      - Self-claim the next unassigned, unblocked task on the shared task list and begin the Implement Phase again.
+   - If they reply with `VERDICT: FAIL — MAX ATTEMPTS REACHED`:
+     - Mark the current task as "failed" on the shared task list.
+     - Note it in `.build/PLAN.md` (change `[ ]` to `[!]`).
+     - Move on to the next unassigned task without stopping.
 
 ## Rules
 

@@ -39,6 +39,8 @@ When approved, print:
 **B. Monitor Progress (Passive Observer):**
 The Builder and Validator communicate directly via the `message` tool — the orchestrator cannot see those exchanges. You can only observe the **shared task list**. Watch for task status changes and reprint the task board each time one occurs.
 
+**The user is not present. Do not pause, ask questions, or wait for input at any point during execution. Run all tasks to completion autonomously. If a task fails after the Validator's maximum pushbacks, log it as failed in `.build/PLAN.md`, then continue with the next task without stopping.**
+
 Task board format:
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -54,9 +56,10 @@ Task board format:
 Status symbols (derived from shared task list only):
 - `✓` — task status is "completed"
 - `►` — task status is "in progress" (claimed by Builder)
+- `✗` — task status is "failed" (Validator could not approve after max pushbacks)
 - `○` — task status is "pending"
 
-When all tasks are completed, ask the teammates to shut down, run team cleanup, and print a final success summary:
+When all tasks are completed, shut down the team, run cleanup, and print a final summary:
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   TEAMS  All [M] tasks complete!
