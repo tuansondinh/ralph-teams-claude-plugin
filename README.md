@@ -1,6 +1,6 @@
 # ralph-teams
 
-A Claude Code plugin that plans and builds features using an agent team — a builder and validator loop per phase, coordinated by you as Team Lead.
+A Claude Code plugin that plans and builds features using an agent team — a builder and validator team per phase, coordinated by the orchestrator, who spawns a fresh team per phase. A phase is ideally big enough to consume 50% of the context window.
 
 ## How it works
 
