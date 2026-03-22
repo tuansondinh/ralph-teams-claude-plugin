@@ -4,15 +4,15 @@
     "name": "tuansondinh"
   },
   "metadata": {
-    "description": "Agent team skills for Claude Code — plan any feature and execute it automatically with a builder + validator loop per phase.",
-    "version": "1.1.0"
+    "description": "Agent team skills for Claude Code — plan any feature and execute it automatically with a builder and validator team.",
+    "version": "1.2.0"
   },
   "plugins": [
     {
       "name": "teams",
       "source": "./",
-      "description": "Plan a feature with Claude, then execute it phase-by-phase using builder and validator agents.",
-      "version": "1.1.0",
+      "description": "Plan a feature with Claude, then execute it using builder and validator agents. Supports both single-plan and multi-phase loop executions.",
+      "version": "1.2.0",
       "keywords": ["agents", "teams", "builder", "validator", "planning", "automation"],
       "category": "productivity",
       "skills": "./skills/"

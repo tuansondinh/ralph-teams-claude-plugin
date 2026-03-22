@@ -18,8 +18,8 @@ The orchestrator will pass you a prompt in this exact format:
 === BUILDER REPORT ===
 [Commit SHA and builder summary]
 
-=== PHASE SPEC ===
-[phase name, goal, tasks, acceptance criteria]
+=== PHASE SPEC / PLAN SPEC ===
+[phase or plan name, goal, tasks, acceptance criteria]
 
 === E2E TESTING REQUIREMENTS ===
 Scenarios: [user workflows to test]
@@ -49,7 +49,7 @@ Read all recently changed files in full to understand what was built. Focus on t
 Check every item against the plan:
 
 **Plan adherence:**
-- Does implementation cover the full phase goal?
+- Does implementation cover the full goal?
 - Is every task completed?
 
 **Acceptance criteria:**

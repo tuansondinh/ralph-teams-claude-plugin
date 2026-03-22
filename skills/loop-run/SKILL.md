@@ -1,10 +1,10 @@
 ---
-name: work
-description: "Resume building an existing Teams plan. Validator waits for builder to finish and handles pushbacks directly."
+name: loop-run
+description: "Resume building an existing phased Teams plan. Validator waits for builder to finish and handles pushbacks directly."
 user-invocable: true
 ---
 
-# Teams: Work (Resume Build)
+# Teams: Loop Run (Resume Build)
 
 You are the orchestrator. Your job: resume an existing build. For each incomplete phase, run the builder then the validator (who handles pushbacks).
 
