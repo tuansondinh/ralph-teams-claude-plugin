@@ -23,6 +23,8 @@ Extract:
 - Feature name
 - Phase count
 - Which phases are done, pending, or partial?
+- `Mode:` field (`sequential` or `parallel`, default: `sequential`)
+- The `Group:` number for each phase (only relevant for `parallel` mode)
 
 ---
 
@@ -32,29 +34,49 @@ Create the team with `TeamCreate`:
 - `team_name`: slugified from plan title
 - `description`: "[Feature name] — agent team execution"
 
-### For each incomplete phase (status: pending or partial):
+Read `Mode:` from `.build/PLAN.md` and execute accordingly:
 
-1. **Create a task** with `TaskCreate`
+---
 
-2. **Spawn builder teammate** in parallel:
-   - `name`: "builder-phase-N"
-   - `subagent_type: "teams:teams-builder"`
-   - Prompt: full plan + phase spec + previous commits
+#### Mode: sequential — for each incomplete phase in order:
 
-3. **Spawn validator teammate** in parallel:
-   - `name`: "validator-phase-N"`
-   - `subagent_type: "teams:teams-validator"`
-   - Prompt: phase spec + e2e requirements + how to test
+1. Create a task with `TaskCreate`
+2. Spawn builder teammate (`name`: "builder-phase-N", `subagent_type: "teams:teams-builder"`)
+   - Prompt: full plan + phase spec + previous phase summaries
+3. Spawn validator teammate alongside the builder (`name`: "validator-phase-N", `subagent_type: "teams:teams-validator"`)
+   - Prompt:
+     ```
+     === PHASE SPEC ===
+     [current phase: name, goal, tasks, acceptance criteria]
 
-4. **Wait for both** to complete (they work simultaneously)
+     === E2E TESTING REQUIREMENTS ===
+     [copy the full ## E2E Testing Requirements section from .build/PLAN.md verbatim]
+     ```
+4. Wait for both to complete
+5. Check verdict — PASS or FAIL. If FAIL — retry builder once with feedback, re-validate
+6. Update task and plan with results. Print phase status. Move to next phase.
 
-5. **Check validator verdict** — PASS or FAIL
+---
 
-6. **If FAIL** — retry builder once with validator feedback, re-validate
+#### Mode: parallel — for each group (in ascending group number order):
 
-7. **Update task and plan** with results
+1. Collect all incomplete phases in this group
+2. For each phase in the group, **simultaneously**:
+   - Create a task with `TaskCreate`
+   - Spawn builder teammate (`name`: "builder-phase-N", `subagent_type: "teams:teams-builder"`)
+     - Prompt: full plan + phase spec + previous phase summaries
+   - Spawn validator teammate alongside the builder (`name`: "validator-phase-N", `subagent_type: "teams:teams-validator"`)
+     - Prompt:
+       ```
+       === PHASE SPEC ===
+       [current phase: name, goal, tasks, acceptance criteria]
 
-8. **Print phase status**
+       === E2E TESTING REQUIREMENTS ===
+       [copy the full ## E2E Testing Requirements section from .build/PLAN.md verbatim]
+       ```
+3. Wait for **all phases in the group** to complete before the next group
+4. For each completed phase: check verdict, retry if FAIL, update task and plan
+5. Print group status. Move to next group.
 
 ---
 

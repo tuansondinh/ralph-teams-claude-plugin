@@ -27,14 +27,25 @@ If unclear, ask 2–3 clarifying questions. Otherwise proceed.
 
 Create `.build/PLAN.md` with phases (~100k–120k tokens per phase).
 
+**Dependency analysis:** Before writing phases, identify which phases can run in parallel. Phases that don't depend on each other's output get the same `Group` number. Phases that must complete before others proceed get a higher group number. Assign group numbers starting at 1.
+
 ```markdown
 # Teams Plan: [Feature Name]
 
 Generated: [date]
 Status: approved
+Mode: sequential
 
 ## Summary
 [What we're building — 2–4 sentences]
+
+## Execution Order
+
+| Group | Phases | Notes |
+|-------|--------|-------|
+| 1     | Phase 1: [Name] | — |
+| 2     | Phase 2: [Name], Phase 3: [Name] | ⚡ run in parallel |
+| 3     | Phase 4: [Name] | depends on group 2 |
 
 ## E2E Testing Requirements
 [To be collected from user]
@@ -42,6 +53,7 @@ Status: approved
 ---
 
 ### Phase 1: [Name]
+Group: 1
 Status: pending
 Goal: [What this phase accomplishes]
 
@@ -58,8 +70,19 @@ Acceptance Criteria:
 ---
 
 ### Phase 2: [Name]
-...
+Group: 2
+Status: pending
+Goal: ...
+
+---
+
+### Phase 3: [Name]
+Group: 2
+Status: pending
+Goal: ...
 ```
+
+> **Rule:** Only assign the same group to phases that are truly independent — they must not read or write the same files/state. When in doubt, use sequential groups.
 
 ---
 
@@ -83,9 +106,15 @@ Document the user's answers in `.build/PLAN.md` under `## E2E Testing Requiremen
 
 Display `.build/PLAN.md` and ask:
 
-> **Plan and e2e requirements look good?** Reply `yes` to start building, or tell me what to change.
+> **Plan and e2e requirements look good?**
+>
+> Also — should independent phases run in **parallel** or **sequential**?
+> - `parallel` — phases in the same group run simultaneously (faster, uses more resources)
+> - `sequential` — one phase at a time in order (safer, easier to debug)
+>
+> Reply with your choice + `yes` to start, or tell me what to change.
 
-Update and re-show if needed.
+Set `Mode: parallel` or `Mode: sequential` in `.build/PLAN.md` based on the user's answer (default: `sequential`). Update and re-show if needed.
 
 ---
 
@@ -99,22 +128,51 @@ When approved, print:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-### For each phase:
+Read `Mode:` from `.build/PLAN.md` and execute accordingly:
 
-1. **Create a task** with `TaskCreate`
-2. **Spawn builder teammate** in parallel:
-   - `name`: "builder-phase-N"
-   - `subagent_type: "teams:teams-builder"`
-   - Prompt: full plan + phase spec + previous commits
-3. **Spawn validator teammate** in parallel:
-   - `name`: "validator-phase-N"
-   - `subagent_type: "teams:teams-validator"`
-   - Prompt: phase spec + e2e requirements + how to test
-4. **Wait for both** to complete (they work simultaneously)
-5. **Check validator verdict** — PASS or FAIL
-6. **If FAIL** — retry builder once with validator feedback, re-validate
-7. **Update task and plan** with results
-8. **Print phase status**
+---
+
+#### Mode: sequential — for each phase in order:
+
+1. Create a task with `TaskCreate`
+2. Spawn builder teammate (`name`: "builder-phase-N", `subagent_type: "teams:teams-builder"`)
+   - Prompt: full plan + phase spec + previous phase summaries
+3. Spawn validator teammate alongside the builder (`name`: "validator-phase-N", `subagent_type: "teams:teams-validator"`)
+   - Prompt:
+     ```
+     === PHASE SPEC ===
+     [current phase: name, goal, tasks, acceptance criteria]
+
+     === E2E TESTING REQUIREMENTS ===
+     [copy the full ## E2E Testing Requirements section from .build/PLAN.md verbatim]
+     ```
+4. Wait for both to complete
+5. Check verdict — PASS or FAIL. If FAIL — retry builder once with feedback, re-validate
+6. Update task and plan with results. Print phase status. Move to next phase.
+
+---
+
+#### Mode: parallel — for each group (in ascending group number order):
+
+1. Collect all phases in this group with `Status: pending` or `Status: partial`
+2. For each phase in the group, **simultaneously**:
+   - Create a task with `TaskCreate`
+   - Spawn builder teammate (`name`: "builder-phase-N", `subagent_type: "teams:teams-builder"`)
+     - Prompt: full plan + phase spec + previous phase summaries
+   - Spawn validator teammate alongside the builder (`name`: "validator-phase-N", `subagent_type: "teams:teams-validator"`)
+     - Prompt:
+       ```
+       === PHASE SPEC ===
+       [current phase: name, goal, tasks, acceptance criteria]
+
+       === E2E TESTING REQUIREMENTS ===
+       [copy the full ## E2E Testing Requirements section from .build/PLAN.md verbatim]
+       ```
+3. Wait for **all phases in the group** to complete before starting the next group
+4. For each completed phase: check verdict, retry if FAIL, update task and plan
+5. Print group status. Move to next group.
+
+---
 
 ### When all phases complete:
 
