@@ -110,8 +110,8 @@ When approved, print:
 2. Add all tasks from the plan to the **shared task list** as "pending".
 3. Assign the first task to the Builder to begin execution.
 
-**B. Monitor and Route Progress to User:**
-After each status change, reprint the full task board followed by the current status line. This replaces the previous output so the user always sees the complete picture.
+**B. Monitor Progress (Passive Observer):**
+The Builder and Validator communicate directly via the `message` tool — the orchestrator cannot see those exchanges. You can only observe the **shared task list**. Watch for task status changes and reprint the task board each time one occurs.
 
 Task board format:
 ```
@@ -119,23 +119,16 @@ Task board format:
   TEAMS  [N of M tasks complete]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   ✓  Task 1: Project Setup          [done]
-  ►  Task 2: Auth System            [building...]
+  ►  Task 2: Auth System            [in progress]
   ○  Task 3: API Routes             [pending]
   ○  Task 4: Frontend               [pending]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-Status symbols:
-- `✓` — completed (Validator returned PASS)
-- `►` — active (Builder is working or Validator is reviewing)
-- `⟲` — retrying (Validator returned FAIL, Builder is fixing)
-- `○` — pending
-
-Status line appended below the board on each event:
-- Builder starts a task → `► Task [N]: Building...`
-- Builder messages Validator → `► Task [N]: Validating...`
-- Validator returns FAIL → `⟲ Task [N]: Pushback received. Retrying...`
-- Validator returns PASS → `✓ Task [N]: Complete!`
+Status symbols (derived from shared task list only):
+- `✓` — task status is "completed"
+- `►` — task status is "in progress" (claimed by Builder)
+- `○` — task status is "pending"
 
 When all tasks are completed, ask the teammates to shut down, run team cleanup, and print a final success summary:
 ```
