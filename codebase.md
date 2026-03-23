@@ -37,7 +37,7 @@ Frontmatter fields: `name`, `description`, `model` (sonnet/opus/haiku).
 | Agent | Model | Role |
 |-------|-------|------|
 | `teams-builder.md` | Sonnet | Implements a single task or applies review fixes. Verifies with Playwright (web) or Maestro (mobile) before committing. |
-| `teams-reviewer.md` | Opus | Reviews the full implementation against acceptance criteria. Runs tests. Optionally consults Codex via Multi-CLI MCP. Writes `.build/REVIEW.md`. |
+| `teams-reviewer.md` | Opus | Reviews the full implementation against acceptance criteria. Runs tests. Optionally consults Codex via Multi-CLI MCP. Writes `ralph-teams/REVIEW.md`. |
 
 ### Skill Files (`skills/`)
 
@@ -60,7 +60,7 @@ Orchestrator (plan or run skill)
   ├── Agent(teams-builder, sonnet) → Task 1 → verify → commit
   ├── Agent(teams-builder, sonnet) → Task 2 → verify → commit
   ├── ...
-  ├── Agent(teams-reviewer, opus)  → review all changes → .build/REVIEW.md
+  ├── Agent(teams-reviewer, opus)  → review all changes → ralph-teams/REVIEW.md
   └── Agent(teams-builder, sonnet) → apply review fixes → commit
 ```
 
@@ -77,7 +77,7 @@ Orchestrator (plan or run skill)
 
 ### Builder subagent
 1. Receives assignment from orchestrator (task details or review fixes)
-2. Reads `.build/PLAN.md` for context
+2. Reads `ralph-teams/PLAN.md` for context
 3. Implements the work
 4. Verifies with Playwright/Maestro (or falls back to tests if unavailable)
 5. Commits with descriptive message
@@ -89,9 +89,9 @@ Orchestrator (plan or run skill)
 3. Reviews against acceptance criteria
 4. Runs project build/tests
 5. Optionally consults Codex via Multi-CLI MCP
-6. Writes `.build/REVIEW.md` with blocking/non-blocking findings
+6. Writes `ralph-teams/REVIEW.md` with blocking/non-blocking findings
 
-### .build/ directory
+### ralph-teams/ directory
 
 | File | Written by | Purpose |
 |------|-----------|---------|
@@ -99,7 +99,7 @@ Orchestrator (plan or run skill)
 | `REVIEW.md` | Reviewer | Code review findings |
 | `VERIFY.md` | Verify skill | Manual E2E verification results |
 
-Created by the orchestrator (`mkdir -p .build`) at the start of `/teams:plan`.
+Created by the orchestrator (`mkdir -p ralph-teams`) at the start of `/teams:plan`.
 
 ### PLAN.md format
 

@@ -8,48 +8,33 @@ flowchart TD
     classDef doc fill:#ffffba,stroke:#e6e65a,stroke-width:2px,color:#333
     classDef cmd fill:#f3e8ff,stroke:#c084fc,stroke-width:2px,color:#333
 
-    U((User)):::user
+    P1["/teams:plan — Discuss feature, write plan, get approval"]:::cmd
+    P["ralph-teams/PLAN.md"]:::doc
 
-    CmdPlan[/teams:plan]:::cmd
-    CmdRun[/teams:run]:::cmd
-    CmdVerify[/teams:verify]:::cmd
+    P1 --> P
 
-    O[Orchestrator]:::orch
-    P[.build/PLAN.md]:::doc
+    P2["/teams:run — Build each task sequentially"]:::cmd
 
-    subgraph Build["Sequential Build"]
+    P --> P2
+
+    subgraph Build[" "]
         direction TB
-        B1[Sonnet Builder — Task 1]:::agent
-        B2[Sonnet Builder — Task 2]:::agent
-        BN[Sonnet Builder — Task N]:::agent
+        B1["Sonnet Builder — Task 1"]:::agent
+        B2["Sonnet Builder — Task 2"]:::agent
+        BN["Sonnet Builder — Task N"]:::agent
         B1 --> B2 --> BN
     end
 
-    R[Opus Reviewer]:::agent
-    REV[.build/REVIEW.md]:::doc
-    BF[Sonnet Builder — Fixes]:::agent
-    V[Manual Verify with User]:::orch
+    P2 -->|"one fresh agent per task"| Build
 
-    U --> CmdPlan
-    U --> CmdRun
-    U --> CmdVerify
+    R["Opus Reviewer — Reviews all changes"]:::agent
+    REV["ralph-teams/REVIEW.md"]:::doc
+    BF["Sonnet Builder — Applies blocking fixes"]:::agent
 
-    CmdPlan --> |"1. Discuss + Approve"| O
-    CmdRun --> |"1. Load existing"| O
+    Build --> R
+    R --> REV
+    REV --> BF
 
-    O -. "2. Creates / Reads" .-> P
-    O -- "3. Spawns per task" --> Build
-
-    Build -- "4. All tasks done" --> O
-    O -- "5. Spawns reviewer" --> R
-    R -. "Writes" .-> REV
-    R -- "6. Review done" --> O
-    O -- "7. If fixes needed" --> BF
-    BF -- "8. Fixes applied" --> O
-    O -- "9. Done" --> U
-
-    CmdVerify --> V
-    V -. "Reads" .-> P
-    V -. "Reads" .-> REV
-    V -- "Results" --> U
+    P3["/teams:verify — Walk through scenarios manually"]:::cmd
+    BF --> P3
 ```

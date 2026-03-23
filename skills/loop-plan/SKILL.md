@@ -24,7 +24,7 @@ If unclear, ask 2–3 clarifying questions. Otherwise proceed.
 
 **Task sizing within a phase:** Each task inside a phase follows the same rules as single-plan tasks — meaningful and self-contained, not too small, not too big.
 
-Create `.build/PLAN.md`:
+Create `ralph-teams/PLAN.md`:
 
 ```markdown
 # Teams Plan: [Feature Name]
@@ -80,13 +80,13 @@ Acceptance Criteria:
 > 4. **Tool preference** — Playwright or Maestro? (default: Playwright)
 > 5. **.env file** — provide a `.env.example` or list required variables
 
-Document answers in `.build/PLAN.md` under `## E2E Testing Requirements`.
+Document answers in `ralph-teams/PLAN.md` under `## E2E Testing Requirements`.
 
 ---
 
 ## Step 4: Show Plan and Get Approval
 
-Display `.build/PLAN.md` and ask:
+Display `ralph-teams/PLAN.md` and ask:
 
 > **Plan and e2e requirements look good? Reply `yes` to start, or tell me what to change.**
 
@@ -113,7 +113,7 @@ For each phase in order:
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    ```
 
-2. **Update phase status** to `in-progress` in `.build/PLAN.md`.
+2. **Update phase status** to `in-progress` in `ralph-teams/PLAN.md`.
 
 3. **Spawn a fresh team** with `TeamCreate` for this phase, containing a `teams-builder` and a `teams-validator` as teammates.
 
@@ -138,7 +138,7 @@ For each phase in order:
 
    Status symbols: `✓` done · `►` in progress · `◉` validating · `✗` failed · `○` pending
 
-6. **When all tasks in the phase are done**, shut down the team and update phase status in `.build/PLAN.md`:
+6. **When all tasks in the phase are done**, shut down the team and update phase status in `ralph-teams/PLAN.md`:
    - All tasks passed → `Status: done`
    - Some tasks failed → `Status: partial`
 

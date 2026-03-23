@@ -12,15 +12,15 @@ You guide the user through manually verifying the completed build end-to-end. On
 
 ## Step 1: Load the Plan
 
-Read `.build/PLAN.md`. If not found:
-> `.build/PLAN.md` not found. Run `/teams-plan` first.
+Read `ralph-teams/PLAN.md`. If not found:
+> `ralph-teams/PLAN.md` not found. Run `/teams-plan` first.
 
 Extract:
 - All tasks
 - Acceptance criteria
 - Verification scenarios
 
-Also read `.build/REVIEW.md` if it exists (to know what was already flagged by the automated reviewer).
+Also read `ralph-teams/REVIEW.md` if it exists (to know what was already flagged by the automated reviewer).
 
 ---
 
@@ -40,7 +40,7 @@ Wait for their response. Note any skips.
 
 ## Step 3: Walk Through Scenarios
 
-For each verification scenario from `.build/PLAN.md`, present it one at a time:
+For each verification scenario from `ralph-teams/PLAN.md`, present it one at a time:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -71,7 +71,7 @@ Keep going until all scenarios are covered.
 
 ## Step 4: Write Verification Report
 
-Write results to `.build/VERIFY.md`:
+Write results to `ralph-teams/VERIFY.md`:
 
 ```markdown
 # Manual Verification Report: [Feature Name]
@@ -122,4 +122,4 @@ Print the final result:
 If there are failures, ask:
 > **Want me to open a fix pass? I can spawn a builder to address the failed scenarios.**
 
-If yes, read the failures from `.build/VERIFY.md` and spawn a **Sonnet** builder subagent with the list of issues to fix. Then offer to re-run verification on just the failed scenarios.
+If yes, read the failures from `ralph-teams/VERIFY.md` and spawn a **Sonnet** builder subagent with the list of issues to fix. Then offer to re-run verification on just the failed scenarios.

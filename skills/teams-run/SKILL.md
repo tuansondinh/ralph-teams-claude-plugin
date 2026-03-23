@@ -12,8 +12,8 @@ You are the orchestrator. Resume an existing build by running all incomplete tas
 
 ## Step 1: Find the Plan
 
-Read `.build/PLAN.md`. If not found:
-> `.build/PLAN.md` not found. Use `/teams:plan` to create a plan first.
+Read `ralph-teams/PLAN.md`. If not found:
+> `ralph-teams/PLAN.md` not found. Use `/teams:plan` to create a plan first.
 
 Identify:
 - All tasks and their status (`[x]` = done, `[!]` = failed, `[ ]` = incomplete)
@@ -54,14 +54,14 @@ Agent(
     Platform: [web|mobile]
 
     Full plan:
-    [paste .build/PLAN.md content]
+    [paste ralph-teams/PLAN.md content]
 
     Your task: implement Task [N] only. Verify it works using [Playwright|Maestro], then commit.
     If [Playwright|Maestro] tools are not available, run tests/lint instead and note that E2E verification was skipped."
 )
 ```
 
-Wait for each subagent to complete before starting the next. After each task, update `.build/PLAN.md` (change `[ ]` to `[x]` on success, `[!]` on failure) and reprint the task board.
+Wait for each subagent to complete before starting the next. After each task, update `ralph-teams/PLAN.md` (change `[ ]` to `[x]` on success, `[!]` on failure) and reprint the task board.
 
 If a builder subagent fails, log it as failed and continue.
 
@@ -89,9 +89,9 @@ Agent(
     Use `git diff [BASE_SHA]..HEAD` to see all changes.
 
     Full plan:
-    [paste .build/PLAN.md content]
+    [paste ralph-teams/PLAN.md content]
 
-    Write your review to .build/REVIEW.md.
+    Write your review to ralph-teams/REVIEW.md.
     If mcp__Multi-CLI__Ask-Codex is available, use it for a second opinion."
 )
 ```
@@ -100,7 +100,7 @@ Agent(
 
 ## Step 4: Apply Fixes
 
-Read `.build/REVIEW.md`. If there are blocking findings:
+Read `ralph-teams/REVIEW.md`. If there are blocking findings:
 1. Print a summary of the findings.
 2. Spawn a fix-pass builder:
    ```
@@ -110,7 +110,7 @@ Read `.build/REVIEW.md`. If there are blocking findings:
      prompt: "You are applying review fixes (not implementing a new task).
 
        Review findings to fix:
-       [paste blocking findings from .build/REVIEW.md]
+       [paste blocking findings from ralph-teams/REVIEW.md]
 
        Platform: [web|mobile]
 

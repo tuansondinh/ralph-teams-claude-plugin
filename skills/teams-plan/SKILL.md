@@ -24,13 +24,13 @@ Discuss with the user. Identify the target platform: **web** or **mobile** (this
 **Prepare the build directory:**
 
 ```bash
-mkdir -p .build
+mkdir -p ralph-teams
 ```
 
-If `.build/PLAN.md` already exists, ask the user:
+If `ralph-teams/PLAN.md` already exists, ask the user:
 > **A plan already exists from a previous build. Overwrite it, or use `/teams:run` to resume?**
 
-Write `.build/PLAN.md`:
+Write `ralph-teams/PLAN.md`:
 
 ```markdown
 # Plan: [Feature Name]
@@ -65,9 +65,9 @@ After writing the draft plan, ask the user:
 
 If **yes**:
 1. **Check for Multi-CLI MCP:** Look for `mcp__Multi-CLI__Ask-Codex` in your available tools (use `ToolSearch` if needed).
-   - If available: read `.build/PLAN.md` and call `mcp__Multi-CLI__Ask-Codex` with the plan content and the prompt: *"Review this implementation plan. Identify missing tasks, edge cases, or architectural gaps. Be concise."*
-   - If not available: use the `Agent` tool to spawn a general-purpose subagent with `model: opus` and prompt it to review `.build/PLAN.md` for completeness, edge cases, and architectural gaps.
-2. Evaluate the feedback. Incorporate valid findings into `.build/PLAN.md`.
+   - If available: read `ralph-teams/PLAN.md` and call `mcp__Multi-CLI__Ask-Codex` with the plan content and the prompt: *"Review this implementation plan. Identify missing tasks, edge cases, or architectural gaps. Be concise."*
+   - If not available: use the `Agent` tool to spawn a general-purpose subagent with `model: opus` and prompt it to review `ralph-teams/PLAN.md` for completeness, edge cases, and architectural gaps.
+2. Evaluate the feedback. Incorporate valid findings into `ralph-teams/PLAN.md`.
 3. Briefly tell the user what changed.
 
 If **no**: skip to Step 3.
@@ -76,7 +76,7 @@ If **no**: skip to Step 3.
 
 ## Step 3: Get Approval
 
-Display `.build/PLAN.md` and ask:
+Display `ralph-teams/PLAN.md` and ask:
 
 > **"Plan looks good? Reply `yes` to start, or tell me what to change."**
 
@@ -86,7 +86,7 @@ Display `.build/PLAN.md` and ask:
 
 When approved:
 
-1. Update `.build/PLAN.md` status to `approved`.
+1. Update `ralph-teams/PLAN.md` status to `approved`.
 2. Capture the base commit SHA before building starts:
    ```bash
    git rev-parse HEAD
@@ -110,14 +110,14 @@ Agent(
     Platform: [web|mobile]
 
     Full plan:
-    [paste .build/PLAN.md content]
+    [paste ralph-teams/PLAN.md content]
 
     Your task: implement Task [N] only. Verify it works using [Playwright|Maestro], then commit.
     If [Playwright|Maestro] tools are not available, run tests/lint instead and note that E2E verification was skipped."
 )
 ```
 
-Wait for the subagent to complete before starting the next. After each task, update `.build/PLAN.md` (change `[ ]` to `[x]` on success, `[!]` on failure) and print the task board:
+Wait for the subagent to complete before starting the next. After each task, update `ralph-teams/PLAN.md` (change `[ ]` to `[x]` on success, `[!]` on failure) and print the task board:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -161,9 +161,9 @@ Agent(
     Use `git diff [BASE_SHA]..HEAD` to see all changes.
 
     Full plan:
-    [paste .build/PLAN.md content]
+    [paste ralph-teams/PLAN.md content]
 
-    Write your review to .build/REVIEW.md.
+    Write your review to ralph-teams/REVIEW.md.
     If mcp__Multi-CLI__Ask-Codex is available, use it for a second opinion."
 )
 ```
@@ -172,7 +172,7 @@ Agent(
 
 ## Step 6: Apply Fixes
 
-After the reviewer completes, read `.build/REVIEW.md`.
+After the reviewer completes, read `ralph-teams/REVIEW.md`.
 
 If there are blocking findings:
 1. Print a summary of the review findings.
@@ -184,7 +184,7 @@ If there are blocking findings:
      prompt: "You are applying review fixes (not implementing a new task).
 
        Review findings to fix:
-       [paste blocking findings from .build/REVIEW.md]
+       [paste blocking findings from ralph-teams/REVIEW.md]
 
        Platform: [web|mobile]
 

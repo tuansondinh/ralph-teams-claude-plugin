@@ -13,11 +13,11 @@ You are the orchestrator. Your job: resume an existing phased build by executing
 ## Step 1: Find the Plan
 
 ```bash
-cat .build/PLAN.md
+cat ralph-teams/PLAN.md
 ```
 
 If not found, tell user:
-> `.build/PLAN.md` not found. Use `/teams:loop-plan` to create a plan first.
+> `ralph-teams/PLAN.md` not found. Use `/teams:loop-plan` to create a plan first.
 
 Read the plan and identify:
 - All phases and their current `Status:` (pending, in-progress, partial, done)
@@ -47,7 +47,7 @@ For each incomplete phase in order:
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    ```
 
-2. **Update phase status** to `in-progress` in `.build/PLAN.md`.
+2. **Update phase status** to `in-progress` in `ralph-teams/PLAN.md`.
 
 3. **Spawn a fresh team** with `TeamCreate` for this phase, containing a `teams-builder` and a `teams-validator` as teammates.
 
@@ -72,7 +72,7 @@ For each incomplete phase in order:
 
    Status symbols: `✓` done · `►` in progress · `◉` validating · `✗` failed · `○` pending
 
-6. **When all tasks in the phase are done**, shut down the team and update phase status in `.build/PLAN.md`:
+6. **When all tasks in the phase are done**, shut down the team and update phase status in `ralph-teams/PLAN.md`:
    - All tasks passed → `Status: done`
    - Some tasks failed → `Status: partial`
 
