@@ -60,10 +60,17 @@ Only seek a second opinion if **at least one** of these is true:
 
 If neither applies, skip this step.
 
-If seeking a second opinion: check if `mcp__Multi-CLI__Ask-Codex` is available (use `ToolSearch`).
-- If available: pass a summary of your findings plus the diff stats with the prompt:
-  > *"I reviewed this implementation and found the following. Do you agree? Anything I missed? Be concise."*
-- If not available: skip.
+If seeking a second opinion, try the following in order — use the first one available:
+
+1. **Multi-CLI MCP** — use `ToolSearch` to find `mcp__Multi-CLI__Ask-Codex`, `mcp__Multi-CLI__Ask-Gemini`, or `mcp__Multi-CLI__Ask-OpenCode`. Call the available tool with:
+   > *"I reviewed this implementation and found the following. Do you agree? Anything I missed? Be concise. [paste findings summary + diff stats]"*
+
+2. **Claude Opus via CLI** — if no MCP is available, check if a `claude` CLI tool is accessible and run:
+   ```bash
+   echo "[findings summary + diff stats]" | claude --model claude-opus-4-5 "I reviewed this implementation and found the following. Do you agree? Anything I missed? Be concise."
+   ```
+
+3. **Skip** — if neither is available, proceed without a second opinion.
 
 Incorporate any additional valid findings.
 
