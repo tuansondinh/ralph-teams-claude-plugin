@@ -24,8 +24,8 @@ Discuss with the user. Identify the target platform: **web** or **mobile** (this
 > **Rule of thumb:** when in doubt, split. A task that's too small costs one extra agent spawn. A task that's too big will fail mid-way.
 
 **Task complexity:** For each task, assign a complexity level — this determines which model the builder uses:
-- `simple` → `haiku`: UI changes, simple CRUD, config updates, adding fields, renaming, straightforward bug fixes
-- `complex` → `sonnet`: auth/security, data migrations, database schema design, architecture decisions, algorithms, payments, cross-cutting concerns, anything requiring deep reasoning
+- `simple` → `haiku`: truly trivial tasks only — renaming, copy changes, config tweaks, adding a single field
+- `standard` → `sonnet`: everything else — the default for any task with real logic, UI, CRUD, auth, migrations, architecture, etc.
 
 **Prepare the build directory:**
 
@@ -51,8 +51,8 @@ Status: draft
 
 ## Tasks
 1. [ ] Task 1: [Description] — complexity: simple
-2. [ ] Task 2: [Description] — complexity: complex
-3. [ ] Task 3: [Description] — complexity: simple
+2. [ ] Task 2: [Description] — complexity: standard
+3. [ ] Task 3: [Description] — complexity: standard
 
 ## Acceptance Criteria
 - [Criterion 1]
@@ -111,7 +111,7 @@ When approved:
 
 For **each task in order**, use the `Agent` tool to spawn a builder subagent. Pick the model from the task's complexity annotation:
 - `complexity: simple` → `model: "haiku"`
-- `complexity: complex` → `model: "sonnet"`
+- `complexity: standard` → `model: "sonnet"`
 
 ```
 Agent(

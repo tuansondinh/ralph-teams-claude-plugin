@@ -46,7 +46,7 @@ Save this as `BASE_SHA`.
 
 For **each incomplete task** (`[ ]` or `[!]`) **in order**, use the `Agent` tool. Pick the model from the task's complexity annotation:
 - `complexity: simple` → `model: "haiku"`
-- `complexity: complex` → `model: "sonnet"`
+- `complexity: standard` → `model: "sonnet"`
 
 ```
 Agent(
