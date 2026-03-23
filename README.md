@@ -27,15 +27,53 @@ Then run `/teams:plan` in any project.
 
 ## How it works
 
-```
-/teams:plan   →  Discuss feature → write plan → approve
-/teams:run    →  Build each task (one fresh Sonnet agent per task)
-              →  Opus reviewer checks the full implementation
-              →  Builder applies any blocking fixes
-/teams:verify →  Walk through E2E scenarios manually with you
+```mermaid
+flowchart TD
+    classDef user fill:#ffdfba,stroke:#ffb347,stroke-width:2px,color:#333
+    classDef orch fill:#bae1ff,stroke:#5facff,stroke-width:2px,color:#333
+    classDef agent fill:#baffc9,stroke:#42d669,stroke-width:2px,color:#333
+    classDef doc fill:#ffffba,stroke:#e6e65a,stroke-width:2px,color:#333
+    classDef cmd fill:#f3e8ff,stroke:#c084fc,stroke-width:2px,color:#333
+    classDef optional fill:#ffe4e1,stroke:#ff9999,stroke-width:1px,stroke-dasharray:4,color:#333
+
+    P1["/teams:plan — Discuss feature, write plan, get approval"]:::cmd
+    P["ralph-teams/PLAN.md"]:::doc
+    CX1["Codex second opinion on plan (optional)"]:::optional
+
+    P1 --> P
+    P --> CX1
+
+    P2["/teams:run — Build each task sequentially"]:::cmd
+
+    CX1 -->|"approved"| P2
+
+    subgraph Build[" "]
+        direction TB
+        B1["Sonnet Builder — Task 1"]:::agent
+        B2["Sonnet Builder — Task 2"]:::agent
+        BN["Sonnet Builder — Task N"]:::agent
+        B1 --> B2 --> BN
+    end
+
+    P2 -->|"one fresh agent per task"| Build
+
+    R["Opus Reviewer — Reviews all changes"]:::agent
+    CX2["Codex second opinion on review (optional)"]:::optional
+    REV["ralph-teams/REVIEW.md"]:::doc
+    BF["Sonnet Builder — Applies blocking fixes"]:::agent
+    DOCS["Haiku — Updates docs (optional)"]:::optional
+
+    Build --> R
+    R --> CX2
+    CX2 --> REV
+    REV --> BF
+    BF --> DOCS
+
+    P3["/teams:verify — Walk through scenarios manually"]:::cmd
+    DOCS --> P3
 ```
 
-Each task runs in its own isolated subagent with a clean context window. Results are committed after each task so you can always resume with `/teams:run`.
+Each task runs in its own isolated subagent with a clean 200k token context window. Results are committed after each task so you can always resume with `/teams:run`.
 
 ---
 
