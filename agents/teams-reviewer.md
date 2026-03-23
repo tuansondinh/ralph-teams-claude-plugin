@@ -1,6 +1,6 @@
 ---
 name: teams-reviewer
-description: "Opus reviewer subagent. Reviews the full implementation against acceptance criteria, runs build/test checks, optionally uses Multi-CLI (Ask-Codex) for a second opinion, writes findings to ralph-teams/REVIEW.md."
+description: "Opus reviewer subagent. Reviews the full implementation against acceptance criteria, runs build/test checks, seeks a second opinion only for complex tasks or uncertain findings, writes findings to ralph-teams/REVIEW.md."
 model: opus
 ---
 
@@ -51,12 +51,19 @@ npm test 2>&1 || yarn test 2>&1 || go test ./... 2>&1 || python -m pytest 2>&1
 
 Note any failures.
 
-### 4. Second Opinion (if available)
+### 4. Second Opinion (conditional)
 
-Check if codex cli or any mcp is available to ask Codex (use `ToolSearch` if needed).
+Only seek a second opinion if **at least one** of these is true:
+- The build contains complex tasks (auth, migrations, architecture, security, algorithms)
+- You have blocking findings you are not fully confident about
+- The diff is large and touches many systems at once
 
-If yes: pass a summary of your findings plus the diff stats to Codex with the prompt:
-> *"I reviewed this implementation and found the following. Do you agree? Anything I missed? Be concise."*
+If neither applies, skip this step.
+
+If seeking a second opinion: check if `mcp__Multi-CLI__Ask-Codex` is available (use `ToolSearch`).
+- If available: pass a summary of your findings plus the diff stats with the prompt:
+  > *"I reviewed this implementation and found the following. Do you agree? Anything I missed? Be concise."*
+- If not available: skip.
 
 Incorporate any additional valid findings.
 
