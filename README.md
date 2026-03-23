@@ -1,18 +1,20 @@
 # ralph-teams
 
-A Claude Code plugin that plans and builds features using sequential Sonnet builder subagents with automated E2E verification, followed by an Opus code review pass.
+A Claude Code plugin that plans and builds features using sequential Sonnet builder subagents, automated E2E verification, and an Opus code review pass.
 
-## How it works
+## Quick Start
 
-1. `/teams:plan` — discuss what you want to build, Claude creates a plan with tasks, acceptance criteria, and verification scenarios in `ralph-teams/PLAN.md`. Optionally runs an AI review of the plan. You approve, execution starts.
-2. **Build:** For each task, a Sonnet builder subagent is spawned sequentially. Each builder implements the task, verifies it with Playwright (web) or Maestro (mobile), and commits.
-3. **Review:** After all tasks complete, an Opus reviewer checks the full implementation against acceptance criteria. It can optionally use Multi-CLI (Ask-Codex) for a second opinion. Findings are written to `ralph-teams/REVIEW.md`.
-4. **Fix:** If the review finds blocking issues, a builder subagent is spawned to apply fixes.
-5. `/teams:verify` — walk through manual E2E verification of each scenario with the user.
+```
+/teams:plan
+```
 
-## Install
+That's it. Describe what you want to build — Claude handles the rest.
 
-Add to your `~/.claude/settings.json`:
+---
+
+## Quick Install
+
+**1. Add the plugin to `~/.claude/settings.json`:**
 
 ```json
 {
@@ -30,17 +32,39 @@ Add to your `~/.claude/settings.json`:
 }
 ```
 
-## Skills
+**2. Restart Claude Code.**
 
-| Command | Description |
+**3. Run `/teams:plan` in any project.**
+
+---
+
+## How it works
+
+```
+/teams:plan   →  Discuss feature → write plan → approve
+/teams:run    →  Build each task (one fresh Sonnet agent per task)
+              →  Opus reviewer checks the full implementation
+              →  Builder applies any blocking fixes
+/teams:verify →  Walk through E2E scenarios manually with you
+```
+
+Each task runs in its own isolated subagent with a clean context window. Results are committed after each task so you can always resume with `/teams:run`.
+
+---
+
+## Commands
+
+| Command | What it does |
 |---------|-------------|
-| `/teams:plan` | Discuss → plan → optional AI review → approve → build (sequential Sonnet builders) → Opus review → apply fixes |
+| `/teams:plan` | Discuss → plan → optional AI review → approve → build → Opus review → fixes |
 | `/teams:run` | Resume an existing plan from where it left off |
 | `/teams:verify` | Walk through manual E2E verification scenario by scenario |
+| `/teams:loop-plan` | Plan and build a large feature in sequential phases |
+| `/teams:loop-run` | Resume a phased plan |
 
-## Output
+---
 
-Progress is shown as a task board, reprinted after each task completes:
+## Progress output
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -53,4 +77,16 @@ Progress is shown as a task board, reprinted after each task completes:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-Status symbols: `✓` done · `►` building · `✗` failed · `○` pending
+`✓` done · `►` building · `✗` failed · `○` pending
+
+---
+
+## Output files
+
+All build artifacts are written to `./ralph-teams/` in your project:
+
+| File | Contents |
+|------|----------|
+| `ralph-teams/PLAN.md` | Tasks, acceptance criteria, verification scenarios |
+| `ralph-teams/REVIEW.md` | Opus reviewer findings (blocking / non-blocking) |
+| `ralph-teams/VERIFY.md` | Manual verification results |
