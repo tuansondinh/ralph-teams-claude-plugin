@@ -62,10 +62,10 @@ If neither applies, skip this step.
 
 If seeking a second opinion, try the following in order — use the first one available:
 
-1. **Multi-CLI MCP** — use `ToolSearch` to find `mcp__Multi-CLI__Ask-Codex`, `mcp__Multi-CLI__Ask-Gemini`, or `mcp__Multi-CLI__Ask-OpenCode`. Call the available tool with:
+1. **External AI via MCP** — use `ToolSearch` to find any MCP tool that lets you query another AI or CLI (e.g. tools with names like `ask_*`, `query_*`, or any MCP exposing another model or provider). Call it with:
    > *"I reviewed this implementation and found the following. Do you agree? Anything I missed? Be concise. [paste findings summary + diff stats]"*
 
-2. **Claude Opus via CLI** — if no MCP is available, check if a `claude` CLI tool is accessible and run:
+2. **Claude Opus via CLI** — if no such MCP is available, check if a `claude` CLI tool is accessible and run:
    ```bash
    echo "[findings summary + diff stats]" | claude --model claude-opus-4-5 "I reviewed this implementation and found the following. Do you agree? Anything I missed? Be concise."
    ```
