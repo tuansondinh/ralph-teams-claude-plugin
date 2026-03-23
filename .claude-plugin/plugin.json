@@ -1,0 +1,20 @@
+{
+  "name": "ralph-teams",
+  "description": "Plan and build features using sequential Sonnet builder subagents, automated E2E verification, and an Opus code review pass.",
+  "version": "1.0.0",
+  "author": "tuansondinh",
+  "homepage": "https://github.com/tuansondinh/ralph-teams-claude-plugin",
+  "repository": "https://github.com/tuansondinh/ralph-teams-claude-plugin",
+  "license": "MIT",
+  "skills": [
+    "skills/teams-plan",
+    "skills/teams-run",
+    "skills/teams-verify",
+    "skills/loop-plan",
+    "skills/loop-run"
+  ],
+  "agents": [
+    "agents/teams-builder.md",
+    "agents/teams-reviewer.md"
+  ]
+}
