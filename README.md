@@ -84,8 +84,6 @@ Each task runs in its own isolated subagent with a clean 200k token context wind
 | `/teams:plan` | Discuss → plan → optional AI review → approve → build → Opus review → fixes |
 | `/teams:run` | Resume an existing plan from where it left off |
 | `/teams:verify` | Walk through manual E2E verification scenario by scenario |
-| `/teams:loop-plan` | Plan and build a large feature in sequential phases |
-| `/teams:loop-run` | Resume a phased plan |
 
 ---
 

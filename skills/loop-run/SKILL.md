@@ -1,3 +1,4 @@
+# outdated
 ---
 name: loop-run
 description: "Resume building an existing phased Teams plan. Spawns a fresh Builder + Validator team for each incomplete phase."

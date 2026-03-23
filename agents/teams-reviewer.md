@@ -53,7 +53,7 @@ Note any failures.
 
 ### 4. Second Opinion (if available)
 
-Check if `mcp__Multi-CLI__Ask-Codex` is available (use `ToolSearch` if needed).
+Check if codex cli or any mcp is available to ask Codex (use `ToolSearch` if needed).
 
 If yes: pass a summary of your findings plus the diff stats to Codex with the prompt:
 > *"I reviewed this implementation and found the following. Do you agree? Anything I missed? Be concise."*
