@@ -11,7 +11,9 @@
     "skills/teams-run",
     "skills/teams-verify",
     "skills/loop-plan",
-    "skills/loop-run"
+    "skills/loop-run",
+    "skills/debug",
+    "skills/teams-document"
   ],
   "agents": [
     "agents/teams-builder.md",

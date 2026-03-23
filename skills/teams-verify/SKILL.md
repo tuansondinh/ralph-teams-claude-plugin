@@ -16,6 +16,7 @@ Read `ralph-teams/PLAN.md`. If not found:
 > `ralph-teams/PLAN.md` not found. Run `/teams-plan` first.
 
 Extract:
+- Plan ID (the `Plan ID:` field — e.g. `#2`)
 - All tasks
 - Acceptance criteria
 - Verification scenarios
@@ -44,7 +45,7 @@ For each verification scenario from `ralph-teams/PLAN.md`, present it one at a t
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  VERIFY  Scenario [N of M]
+  RALPH-TEAMS Plan #[N] — Scenario [N of M]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   [Scenario name]
 
@@ -62,7 +63,12 @@ Then ask:
 > **Result? `pass` / `fail` / `skip` — or describe what you saw.**
 
 - **pass** → record it, move to next scenario
-- **fail** → ask: *"What went wrong?"* Record their description. Ask if they want to stop here or continue verifying the rest.
+- **fail** → ask: *"What went wrong?"* Record their description. Then immediately offer:
+  > **Bug detected. Run `/teams-debug` to fix it now, or continue verifying the rest first?**
+
+  If they say **fix now**: invoke the `teams-debug` skill directly, passing the scenario name and their failure description as context. After the fix is applied, re-run this scenario before continuing.
+
+  If they say **continue**: record the failure and move to the next scenario.
 - **skip** → record as skipped with reason, move on
 
 Keep going until all scenarios are covered.
@@ -76,6 +82,7 @@ Write results to `ralph-teams/VERIFY.md`:
 ```markdown
 # Manual Verification Report: [Feature Name]
 
+Plan ID: #[N]
 Date: [date]
 Verified by: User
 
@@ -111,7 +118,7 @@ Print the final result:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  VERIFY  Done — [N passed, N failed, N skipped]
+  RALPH-TEAMS  Plan #[N] — Done — [N passed, N failed, N skipped]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   ✓  Scenario 1: [name]
   ✗  Scenario 2: [name]
@@ -119,7 +126,12 @@ Print the final result:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-If there are failures, ask:
-> **Want me to open a fix pass? I can spawn a builder to address the failed scenarios.**
+If there are failures, offer:
 
-If yes, read the failures from `ralph-teams/VERIFY.md` and spawn a **Sonnet** builder subagent with the list of issues to fix. Then offer to re-run verification on just the failed scenarios.
+> **N scenario(s) failed. Options:**
+> - `/teams-debug` — fix bugs one at a time with full plan context (recommended)
+> - **Fix all** — I spawn a single builder to address all failures at once
+
+If they choose **`/teams-debug`**: invoke the `teams-debug` skill for each failed scenario in order, passing the scenario name and failure description. After each fix, mark the scenario as `FIXED` in `ralph-teams/VERIFY.md`.
+
+If they choose **fix all**: read the failures from `ralph-teams/VERIFY.md` and spawn a **Sonnet** builder subagent with the full list of issues. Then offer to re-run verification on just the failed scenarios.
