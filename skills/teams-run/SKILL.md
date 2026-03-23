@@ -17,7 +17,7 @@ Read `ralph-teams/PLAN.md`. If not found:
 
 Identify:
 - Plan ID (the `Plan ID:` field — e.g. `#2`)
-- All tasks and their status (`[x]` = done, `[!]` = failed, `[ ]` = incomplete)
+- All tasks, their status (`[x]` = done, `[!]` = failed, `[ ]` = incomplete), and their complexity annotation (`complexity: simple` or `complexity: complex`)
 - Platform (web or mobile)
 - Verification scenarios
 
@@ -44,12 +44,14 @@ git rev-parse HEAD
 ```
 Save this as `BASE_SHA`.
 
-For **each incomplete task** (`[ ]` or `[!]`) **in order**, use the `Agent` tool:
+For **each incomplete task** (`[ ]` or `[!]`) **in order**, use the `Agent` tool. Pick the model from the task's complexity annotation:
+- `complexity: simple` → `model: "haiku"`
+- `complexity: complex` → `model: "sonnet"`
 
 ```
 Agent(
   subagent_type: "teams:teams-builder",
-  model: "sonnet",
+  model: "[haiku | sonnet based on task complexity]",
   prompt: "You are implementing Task [N] of [M]: [task description].
 
     Platform: [web|mobile]
