@@ -1,6 +1,6 @@
 # ralph-teams
 
-A Claude Code plugin that plans and builds features using sequential Sonnet builder subagents, automated E2E verification, and an Opus code review pass.
+A Claude Code plugin that plans and builds features using sequential builder subagents (Haiku or Sonnet based on task complexity), automated E2E verification, an Opus code review pass, and manual verification with integrated debug.
 
 ## Quick Start
 
@@ -49,9 +49,9 @@ flowchart TD
 
     subgraph Build[" "]
         direction TB
-        B1["Sonnet Builder — Task 1"]:::agent
-        B2["Sonnet Builder — Task 2"]:::agent
-        BN["Sonnet Builder — Task N"]:::agent
+        B1["Haiku/Sonnet Builder — Task 1"]:::agent
+        B2["Haiku/Sonnet Builder — Task 2"]:::agent
+        BN["Haiku/Sonnet Builder — Task N"]:::agent
         B1 --> B2 --> BN
     end
 
@@ -61,7 +61,7 @@ flowchart TD
     CX2["Codex second opinion on review (optional)"]:::optional
     REV["ralph-teams/REVIEW.md"]:::doc
     BF["Sonnet Builder — Applies blocking fixes"]:::agent
-    DOCS["Haiku — Updates docs (optional)"]:::optional
+    DOCS["Haiku Scribe — Updates docs (optional)"]:::optional
 
     Build --> R
     R --> CX2
@@ -69,8 +69,10 @@ flowchart TD
     REV --> BF
     BF --> DOCS
 
-    P3["/teams:verify — Walk through scenarios manually"]:::cmd
+    P3["/teams-verify — Walk through scenarios manually"]:::cmd
+    DBG["teams-debug — Fix bugs against the plan"]:::optional
     DOCS --> P3
+    P3 --> DBG
 ```
 
 Each task runs in its own isolated subagent with a clean 200k token context window. Results are committed after each task so you can always resume with `/teams:run`.
@@ -81,9 +83,11 @@ Each task runs in its own isolated subagent with a clean 200k token context wind
 
 | Command | What it does |
 |---------|-------------|
-| `/teams:plan` | Discuss → plan → optional AI review → approve → build → Opus review → fixes |
-| `/teams:run` | Resume an existing plan from where it left off |
-| `/teams:verify` | Walk through manual E2E verification scenario by scenario |
+| `/teams-plan` | Discuss → plan → optional AI review → approve → build → Opus review → fixes |
+| `/teams-run` | Resume an existing plan from where it left off |
+| `/teams-verify` | Walk through manual E2E verification scenario by scenario |
+| `/teams-debug` | Fix a bug in relation to the active plan — usable anytime |
+| `/teams-document` | Update existing docs (README, ARCHITECTURE.md, etc.) for the latest plan |
 
 ---
 
@@ -91,16 +95,16 @@ Each task runs in its own isolated subagent with a clean 200k token context wind
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  TEAMS  2 of 4 tasks complete
+  RALPH-TEAMS  Plan #3 — 2 of 4 tasks complete
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  ✓  Task 1: Project Setup          [done]
-  ✓  Task 2: Auth System            [done]
-  ►  Task 3: API Routes             [building...]
-  ○  Task 4: Frontend               [pending]
+  ✓  Task 1: Project Setup          [done]        (haiku)
+  ✓  Task 2: Auth System            [done]        (sonnet)
+  ►  Task 3: API Routes             [building...]  (sonnet)
+  ○  Task 4: Frontend               [pending]      (haiku)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-`✓` done · `►` building · `✗` failed · `○` pending
+`✓` done · `►` building · `✗` failed · `○` pending · `(haiku)` simple task · `(sonnet)` standard task
 
 ---
 
@@ -110,6 +114,6 @@ All build artifacts are written to `./ralph-teams/` in your project:
 
 | File | Contents |
 |------|----------|
-| `ralph-teams/PLAN.md` | Tasks, acceptance criteria, verification scenarios |
+| `ralph-teams/PLAN.md` | Plan ID, tasks with complexity, acceptance criteria, verification scenarios |
 | `ralph-teams/REVIEW.md` | Opus reviewer findings (blocking / non-blocking) |
 | `ralph-teams/VERIFY.md` | Manual verification results |
