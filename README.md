@@ -14,27 +14,19 @@ That's it. Describe what you want to build — Claude handles the rest.
 
 ## Quick Install
 
-**1. Add the plugin to `~/.claude/settings.json`:**
-
-```json
-{
-  "extraKnownMarketplaces": {
-    "ralph-teams-claude-plugin": {
-      "source": {
-        "source": "github",
-        "repo": "tuansondinh/ralph-teams-claude-plugin"
-      }
-    }
-  },
-  "enabledPlugins": {
-    "@ralph-teams-claude-plugin": true
-  }
-}
+```bash
+python3 -c "
+import json, pathlib
+f = pathlib.Path.home() / '.claude/settings.json'
+s = json.loads(f.read_text()) if f.exists() else {}
+s.setdefault('extraKnownMarketplaces', {})['ralph-teams-claude-plugin'] = {'source': {'source': 'github', 'repo': 'tuansondinh/ralph-teams-claude-plugin'}}
+s.setdefault('enabledPlugins', {})['@ralph-teams-claude-plugin'] = True
+f.write_text(json.dumps(s, indent=2))
+print('Done — restart Claude Code')
+"
 ```
 
-**2. Restart Claude Code.**
-
-**3. Run `/teams:plan` in any project.**
+Then restart Claude Code and run `/teams:plan`.
 
 ---
 
