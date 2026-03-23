@@ -9,7 +9,7 @@
   },
   "plugins": [
     {
-      "name": "teams",
+      "name": "ralph-teams",
       "source": "./",
       "description": "Plan a feature with Claude, then execute it using sequential Sonnet builder subagents with E2E verification, followed by an Opus review pass.",
       "version": "1.3.2",
