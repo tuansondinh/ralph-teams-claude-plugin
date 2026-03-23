@@ -1,6 +1,6 @@
 # ralph-teams
 
-A Claude Code plugin that plans and builds features using sequential builder subagents (Haiku or Sonnet based on task complexity), automated E2E verification, an Opus code review pass, and manual verification with integrated debug.
+A Claude Code plugin that plans and builds features using sequential builder subagents (Haiku or Sonnet based on task complexity). Each task is broken into subtasks the builder works through in one session — automated E2E verification, an Opus code review pass, and manual verification with integrated debug.
 
 ## Quick Start
 
@@ -37,7 +37,7 @@ flowchart TD
     classDef optional fill:#ffe4e1,stroke:#ff9999,stroke-width:1px,stroke-dasharray:4,color:#333
 
     P1["/teams:plan — Discuss feature, write plan, get approval"]:::cmd
-    P["ralph-teams/PLAN.md"]:::doc
+    P[".ralph-teams/PLAN.md"]:::doc
     CX1["Codex second opinion on plan (optional)"]:::optional
 
     P1 --> P
@@ -59,7 +59,7 @@ flowchart TD
 
     R["Opus Reviewer — Reviews all changes"]:::agent
     CX2["Codex second opinion on review (optional)"]:::optional
-    REV["ralph-teams/REVIEW.md"]:::doc
+    REV[".ralph-teams/REVIEW.md"]:::doc
     BF["Sonnet Builder — Applies blocking fixes"]:::agent
     DOCS["Haiku Scribe — Updates docs (optional)"]:::optional
 
@@ -75,7 +75,7 @@ flowchart TD
     P3 --> DBG
 ```
 
-Each task runs in its own isolated subagent with a clean 200k token context window. Results are committed after each task so you can always resume with `/teams:run`.
+Each task runs in its own isolated subagent with a clean 200k token context window. Tasks are meaningful feature areas broken into subtasks — the builder completes all subtasks within one session. Results are committed after each task so you can always resume with `/teams:run`.
 
 ---
 
@@ -110,10 +110,10 @@ Each task runs in its own isolated subagent with a clean 200k token context wind
 
 ## Output files
 
-All build artifacts are written to `./ralph-teams/` in your project:
+All build artifacts are written to `./.ralph-teams/` in your project:
 
 | File | Contents |
 |------|----------|
-| `ralph-teams/PLAN.md` | Plan ID, tasks with complexity, acceptance criteria, verification scenarios |
-| `ralph-teams/REVIEW.md` | Opus reviewer findings (blocking / non-blocking) |
-| `ralph-teams/VERIFY.md` | Manual verification results |
+| `.ralph-teams/PLAN.md` | Plan ID, tasks with complexity, acceptance criteria, verification scenarios |
+| `.ralph-teams/REVIEW.md` | Opus reviewer findings (blocking / non-blocking) |
+| `.ralph-teams/VERIFY.md` | Manual verification results |

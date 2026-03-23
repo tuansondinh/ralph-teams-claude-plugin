@@ -54,12 +54,15 @@ Agent(
   model: "[haiku | sonnet based on task complexity]",
   prompt: "You are implementing Task [N] of [M]: [task description].
 
+    Subtasks to complete:
+    [list subtasks from the task]
+
     Platform: [web|mobile]
 
     Full plan:
     [paste .ralph-teams/PLAN.md content]
 
-    Your task: implement Task [N] only. Verify it works using [Playwright|Maestro], then commit.
+    Your task: implement Task [N] only, completing all its subtasks. Verify it works using [Playwright|Maestro], then commit.
     If [Playwright|Maestro] tools are not available, run tests/lint instead and note that E2E verification was skipped."
 )
 ```
