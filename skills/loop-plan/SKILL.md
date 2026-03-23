@@ -22,7 +22,7 @@ If unclear, ask 2–3 clarifying questions. Otherwise proceed.
 
 **Phase sizing:** Each phase should be large enough to fill a builder's context window — a substantial, self-contained slice of the feature. Think "implement the full auth system" not "add a login button". Phases are sequential and build on each other.
 
-**Task sizing within a phase:** Each task inside a phase follows the same rules as single-plan tasks — meaningful and self-contained, not too small, not too big.
+**Task sizing within a phase:** Each task runs in its own builder agent with a 200k token context window — it must fit entirely within one session. If a task is too large, split it. When in doubt, split: a task that's too small costs one extra agent spawn; a task that's too big will fail mid-way.
 
 Create `ralph-teams/PLAN.md`:
 
