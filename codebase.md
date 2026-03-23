@@ -1,6 +1,6 @@
 # ralph-teams-plugin — Codebase Reference
 
-**Version:** 1.3.1 | **Type:** Claude Code Plugin (Markdown-based, no compiled code)
+**Version:** 1.3.7 | **Type:** Claude Code Plugin (Markdown-based, no compiled code)
 
 ---
 

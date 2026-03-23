@@ -125,6 +125,17 @@ Read `.ralph-teams/REVIEW.md`. If there are blocking findings:
        Commit all fixes together with message: 'fix: address review findings'."
    )
    ```
+3. After the fix-pass builder completes, update `.ralph-teams/REVIEW.md` — append a fix summary section at the bottom:
+   ```markdown
+   ---
+
+   ## Fixes Applied
+
+   **Fixes:** [brief description of what was changed]
+   **Commit:** fix: address review findings
+   **Status:** All blocking findings resolved
+   ```
+   Also mark any blocking findings in the REVIEW.md body as `Resolved` inline.
 
 Final summary:
 ```
