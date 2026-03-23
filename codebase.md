@@ -1,6 +1,6 @@
 # ralph-teams-plugin — Codebase Reference
 
-**Version:** 1.2.1 | **Type:** Claude Code Plugin (Markdown-based, no compiled code)
+**Version:** 1.3.0 | **Type:** Claude Code Plugin (Markdown-based, no compiled code)
 
 ---
 
@@ -11,11 +11,12 @@ ralph-teams-plugin/
 ├── .claude-plugin/
 │   └── marketplace.json          # Plugin registry metadata
 ├── agents/
-│   ├── teams-builder.md          # Builder agent definition
-│   └── teams-validator.md        # Validator agent definition
+│   ├── teams-builder.md          # Sonnet builder subagent (implements tasks + applies review fixes)
+│   └── teams-reviewer.md         # Opus reviewer subagent (reviews full implementation)
 ├── skills/
-│   ├── plan/SKILL.md             # /teams:plan — discuss → plan → execute (single plan)
-│   ├── run/SKILL.md              # /teams:run  — resume a single plan
+│   ├── teams-plan/SKILL.md       # /teams:plan — discuss → plan → build → review → fix
+│   ├── teams-run/SKILL.md        # /teams:run  — resume an existing plan
+│   ├── teams-verify/SKILL.md     # /teams:verify — manual E2E verification walkthrough
 │   ├── loop-plan/SKILL.md        # /teams:loop-plan — phased plan + execute
 │   └── loop-run/SKILL.md         # /teams:loop-run  — resume a phased plan
 ├── README.md
@@ -33,10 +34,10 @@ All files are **Markdown with YAML frontmatter** — no build step, no package m
 
 Frontmatter fields: `name`, `description`, `model` (sonnet/opus/haiku).
 
-| Agent | Name | Role |
-|-------|------|------|
-| `teams-builder.md` | `teams-builder` | Implements tasks, commits, messages Validator |
-| `teams-validator.md` | `teams-validator` | Reviews commits, returns PASS/FAIL, handles pushbacks |
+| Agent | Model | Role |
+|-------|-------|------|
+| `teams-builder.md` | Sonnet | Implements a single task or applies review fixes. Verifies with Playwright (web) or Maestro (mobile) before committing. |
+| `teams-reviewer.md` | Opus | Reviews the full implementation against acceptance criteria. Runs tests. Optionally consults Codex via Multi-CLI MCP. Writes `.build/REVIEW.md`. |
 
 ### Skill Files (`skills/`)
 
@@ -44,10 +45,11 @@ Frontmatter fields: `name`, `description`, `user-invocable: true`.
 
 | Skill file | Command | Purpose |
 |------------|---------|---------|
-| `plan/SKILL.md` | `/teams:plan` | 6-step flow: discuss → plan → E2E requirements → optional AI review → approve → execute |
-| `run/SKILL.md` | `/teams:run` | Resume a single plan; spawns fresh Builder+Validator for remaining tasks |
-| `loop-plan/SKILL.md` | `/teams:loop-plan` | 5-step flow: discuss → phased plan (Group numbers) → E2E → approve + mode → execute |
-| `loop-run/SKILL.md` | `/teams:loop-run` | Resume a phased plan; respects Mode: sequential/parallel and Group dependencies |
+| `teams-plan/SKILL.md` | `/teams:plan` | 6-step flow: discuss → plan → optional AI review → approve → sequential builders → Opus review → apply fixes |
+| `teams-run/SKILL.md` | `/teams:run` | Resume a plan; runs incomplete tasks, then review + fix |
+| `teams-verify/SKILL.md` | `/teams:verify` | Walk user through manual E2E verification scenario by scenario |
+| `loop-plan/SKILL.md` | `/teams:loop-plan` | Phased plan + execute (multi-phase mode) |
+| `loop-run/SKILL.md` | `/teams:loop-run` | Resume a phased plan |
 
 ---
 
@@ -55,70 +57,71 @@ Frontmatter fields: `name`, `description`, `user-invocable: true`.
 
 ```
 Orchestrator (plan or run skill)
-  └── TeamCreate → spawns teammates
-        ├── teams-builder   (implements tasks)
-        └── teams-validator (reviews commits)
-              ↑
-              └── Communicate peer-to-peer via `message` tool (NOT through orchestrator)
+  ├── Agent(teams-builder, sonnet) → Task 1 → verify → commit
+  ├── Agent(teams-builder, sonnet) → Task 2 → verify → commit
+  ├── ...
+  ├── Agent(teams-reviewer, opus)  → review all changes → .build/REVIEW.md
+  └── Agent(teams-builder, sonnet) → apply review fixes → commit
 ```
 
-**Single-plan mode** (`plan` / `run`):
-- One shared task list; Builder claims tasks sequentially
-- Validator reviews each commit; max 2 pushbacks per task
-- Orchestrator monitors and surfaces progress to user
-
-**Phased mode** (`loop-plan` / `loop-run`):
-- Tasks grouped into **Phases**; phases grouped into **Groups** (dependency layers)
-- `Mode: sequential` — one phase at a time in order
-- `Mode: parallel` — all phases in the same Group run simultaneously
-- Separate Builder+Validator pair per phase
+- Builders are spawned **sequentially** — one per task, one at a time
+- Each builder verifies its work with **Playwright** (web) or **Maestro** (mobile) before committing
+- If verification tools are unavailable, builders fall back to running tests/lint
+- The Opus reviewer runs after all tasks complete, reviewing the full diff from `BASE_SHA`
+- The reviewer optionally uses `mcp__Multi-CLI__Ask-Codex` for a second opinion
+- If blocking findings exist, a final builder is spawned to apply fixes
 
 ---
 
 ## Key Contracts
 
-### Builder workflow
-1. Read `.build/PLAN.md` for acceptance criteria
-2. Implement one task, commit, run `git rev-parse HEAD`
-3. Send commit SHA + summary to Validator via `message` tool
-4. On `FAIL`: fix, re-commit, re-send
-5. On `PASS`: mark task "completed", claim next task
+### Builder subagent
+1. Receives assignment from orchestrator (task details or review fixes)
+2. Reads `.build/PLAN.md` for context
+3. Implements the work
+4. Verifies with Playwright/Maestro (or falls back to tests if unavailable)
+5. Commits with descriptive message
+6. Returns summary with commit SHA
 
-### Validator workflow
-1. **Standby**: wait for Builder `message`
-2. On message: `git log --oneline -5` + `git diff HEAD~1..HEAD --stat`
-3. Code-review against acceptance criteria; run E2E if required
-4. Reply via `message`: `VERDICT: PASS` or `VERDICT: FAIL` with specific blocking findings
-5. Never fix code; only review
+### Reviewer subagent
+1. Receives `BASE_SHA` and plan from orchestrator
+2. Runs `git diff <BASE_SHA>..HEAD` to see all changes
+3. Reviews against acceptance criteria
+4. Runs project build/tests
+5. Optionally consults Codex via Multi-CLI MCP
+6. Writes `.build/REVIEW.md` with blocking/non-blocking findings
+
+### .build/ directory
+
+| File | Written by | Purpose |
+|------|-----------|---------|
+| `PLAN.md` | Orchestrator | Tasks, acceptance criteria, verification scenarios |
+| `REVIEW.md` | Reviewer | Code review findings |
+| `VERIFY.md` | Verify skill | Manual E2E verification results |
+
+Created by the orchestrator (`mkdir -p .build`) at the start of `/teams:plan`.
 
 ### PLAN.md format
-Located at `.build/PLAN.md`. Written by the orchestrator skill.
 
 ```markdown
-# Teams Plan: [Feature Name]
-Generated: [date]
-Status: approved
-Mode: single | sequential | parallel
+# Plan: [Feature Name]
 
-## Tasks           ← single-plan mode
-- [ ] Task 1
-- [x] Task 2 (completed)
+Generated: [date]
+Platform: web | mobile
+Status: draft | approved
+
+## Tasks
+1. [ ] Task 1: [Description]
+2. [x] Task 2: [Description]  ← completed
+3. [!] Task 3: [Description]  ← failed
 
 ## Acceptance Criteria
-- ...
+- [Criterion 1]
 
-## E2E Testing Requirements
-...
-
----
-### Phase 1: [Name]   ← loop-plan mode
-Group: 1
-Status: pending | in-progress | done | partial | failed
-Goal: ...
-Tasks:
-- [ ] Task A
-Acceptance Criteria:
-- ...
+## Verification
+Tool: Playwright | Maestro
+Scenarios:
+- [Scenario: name — steps — expected result]
 ```
 
 ---
@@ -126,11 +129,16 @@ Acceptance Criteria:
 ## Orchestrator Progress Output
 
 ```
-► Task [N]: Building...
-► Task [N]: Validating...
-⟲ Task [N]: Pushback received. Retrying...
-✓ Task [N]: Complete!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  TEAMS  [N of M tasks complete]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ✓  Task 1: ...          [done]
+  ►  Task 2: ...          [building...]
+  ○  Task 3: ...          [pending]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
+
+Status symbols: `✓` done · `►` building · `✗` failed · `○` pending
 
 ---
 

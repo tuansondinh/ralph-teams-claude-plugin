@@ -1,7 +1,7 @@
 ---
 name: loop-plan
 description: "Plan and build a large feature in sequential phases. Each phase gets a fresh Builder + Validator team with a clean context window."
-user-invocable: true
+user-invocable: false
 ---
 
 # Teams: Loop Plan + Build

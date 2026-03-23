@@ -1,47 +1,43 @@
 ---
 name: teams-plan
-description: "Plan and build a feature using native Agent Teams. Orchestrator creates the team and tasks; Builder and Validator communicate directly via the message tool."
+description: "Plan and build a feature. Orchestrator plans, spawns sequential Sonnet builder subagents per task (with Playwright/Maestro verification), then an Opus reviewer, then a builder to apply fixes."
 user-invocable: true
 ---
 
-# Teams: Plan + Build (Single Plan)
+# Teams: Plan + Build
 
-You are the planner and team lead (Orchestrator). Your job:
-1. Discuss the feature with the user.
-2. Lay out a plan with acceptance criteria and logical tasks.
-3. Collect E2E testing requirements.
-4. Recommend an AI plan review, adjust the plan if needed.
-5. Get final approval from the user.
-6. Execute the plan by creating a native Agent Team with a Builder and Validator.
-7. Create the tasks on the shared task list and assign them to the Builder.
-8. Monitor the team and output progress to the user.
+You are the planner and orchestrator. Your job: discuss the feature, create a plan, execute it with sequential builder subagents, review the result with an Opus reviewer, and apply fixes.
 
 ---
 
-## Step 1: Understand the Request
+## Step 1: Discuss + Plan
 
 Ask: **"What do you want to build?"**
 
-Discuss with the user. Break the work down into logical tasks/phases.
+Discuss with the user. Identify the target platform: **web** or **mobile** (this determines whether the builder uses Playwright or Maestro for verification).
 
----
-
-## Step 2: Write the Plan
-
-**Task sizing:** Each task should represent a meaningful, self-contained unit of work — something a developer could complete and commit in one focused session. Aim for tasks that touch a coherent slice of functionality.
-
-- **Too small:** "Add a button", "rename a variable", "update one line" — these create noise and slow down validation unnecessarily. Merge them into a larger task.
-- **Too big:** "Build the entire backend", "implement all API routes" — these are too risky to validate as a unit. Split them.
+**Task sizing:** Each task should be a meaningful, self-contained unit of work — something a developer could complete in one focused session.
+- **Too small:** "Add a button", "rename a variable" — merge into a larger task.
+- **Too big:** "Build the entire backend", "implement all API routes" — split them.
 - **Right size:** "Implement user authentication (signup, login, JWT middleware)", "Build the product listing page with filtering and pagination".
 
-Create `.build/PLAN.md`.
+**Prepare the build directory:**
+
+```bash
+mkdir -p .build
+```
+
+If `.build/PLAN.md` already exists, ask the user:
+> **A plan already exists from a previous build. Overwrite it, or use `/teams:run` to resume?**
+
+Write `.build/PLAN.md`:
 
 ```markdown
-# Teams Plan: [Feature Name]
+# Plan: [Feature Name]
 
 Generated: [date]
-Status: approved
-Mode: single
+Platform: web | mobile
+Status: draft
 
 ## Tasks
 1. [ ] Task 1: [Description]
@@ -52,109 +48,165 @@ Mode: single
 - [Criterion 1]
 - [Criterion 2]
 
-## E2E Testing Requirements
-[To be collected from user]
+## Verification
+Tool: Playwright | Maestro
+Scenarios:
+- [Scenario 1: name — steps — expected result]
+- [Scenario 2: name — steps — expected result]
 ```
 
 ---
 
-## Step 3: Collect E2E Requirements
+## Step 2: Optional Plan Review
 
-**Ask the user:**
+After writing the draft plan, ask the user:
 
-> Before we build, I need to know what we'll test:
->
-> 1. **E2E scenarios** - what user workflows should the validator test?
-> 2. **Environment setup** - what do we need? Test accounts? API keys? Database setup?
-> 3. **Test data** - any specific data the validator needs?
-> 4. **Tool preference** - Playwright or Maestro for e2e? (default: Playwright)
-> 5. **.env file** - provide a `.env.example` or list what variables we need for testing
+> **"Would you like another AI agent to review this plan for completeness and edge cases? (Recommended: Yes)"**
 
-Document the user's answers in `.build/PLAN.md` under `## E2E Testing Requirements`.
+If **yes**:
+1. **Check for Multi-CLI MCP:** Look for `mcp__Multi-CLI__Ask-Codex` in your available tools (use `ToolSearch` if needed).
+   - If available: read `.build/PLAN.md` and call `mcp__Multi-CLI__Ask-Codex` with the plan content and the prompt: *"Review this implementation plan. Identify missing tasks, edge cases, or architectural gaps. Be concise."*
+   - If not available: use the `Agent` tool to spawn a general-purpose subagent with `model: opus` and prompt it to review `.build/PLAN.md` for completeness, edge cases, and architectural gaps.
+2. Evaluate the feedback. Incorporate valid findings into `.build/PLAN.md`.
+3. Briefly tell the user what changed.
 
----
-
-## Step 4: Plan Review (Optional but Recommended)
-
-After creating the draft plan, ask the user:
-> **"Would you like another AI agent to review this plan for completeness, edge cases, and architectural gaps? (Recommended: Yes)"**
-
-If the user responds **yes**:
-1. **Check for external AI tools:** Look at your available tools or MCP servers to see if there is a CLI or tool to call another AI (like `codex`, `copilot`, etc.).
-2. **Execute the Review:**
-   - If an external tool/CLI exists (e.g. `codex`), use the `bash` tool to run it (e.g. `cat .build/PLAN.md | codex "Review this plan and find missing edge cases or missing tasks"`).
-   - Otherwise, spawn another subagent (using `Task` or `AgentSpawn`) and explicitly request it to use the `opus` model to review the plan in `.build/PLAN.md`.
-3. **Analyze Findings:** Evaluate the review feedback. If there are valid findings or missing edge cases, automatically adjust `.build/PLAN.md` to incorporate them.
-4. **Present the Adjustments:** Briefly tell the user what was added or changed based on the review, and let them confirm the adjustments before getting final approval.
-
-If the user responds **no**, proceed directly to Step 5.
+If **no**: skip to Step 3.
 
 ---
 
-## Step 5: Show Plan and Get Final Approval
+## Step 3: Get Approval
 
-Display `.build/PLAN.md` (with any review adjustments applied) and ask:
+Display `.build/PLAN.md` and ask:
 
-> **Plan and e2e requirements look good?**
->
-> Reply with `yes` to start, or tell me what to change.
+> **"Plan looks good? Reply `yes` to start, or tell me what to change."**
 
 ---
 
-## Step 6: Execute with Native Agent Teams
+## Step 4: Execute — Sequential Builder Subagents
 
-When approved, print:
+When approved:
+
+1. Update `.build/PLAN.md` status to `approved`.
+2. Capture the base commit SHA before building starts:
+   ```bash
+   git rev-parse HEAD
+   ```
+   Save this as `BASE_SHA` — you will pass it to the reviewer later.
+3. Print:
+   ```
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     TEAMS  Starting build...
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   ```
+
+For **each task in order**, use the `Agent` tool to spawn a builder subagent:
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  TEAMS  Starting build...
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Agent(
+  subagent_type: "teams:teams-builder",
+  model: "sonnet",
+  prompt: "You are implementing Task [N] of [M]: [task description].
+
+    Platform: [web|mobile]
+
+    Full plan:
+    [paste .build/PLAN.md content]
+
+    Your task: implement Task [N] only. Verify it works using [Playwright|Maestro], then commit.
+    If [Playwright|Maestro] tools are not available, run tests/lint instead and note that E2E verification was skipped."
+)
 ```
 
-**A. Spawn the Team:**
-1. Instruct the system to create an agent team containing a `teams-builder` and a `teams-validator`.
-2. Add all tasks from the plan to the **shared task list** as "pending".
-3. Assign the first task to the Builder to begin execution.
+Wait for the subagent to complete before starting the next. After each task, update `.build/PLAN.md` (change `[ ]` to `[x]` on success, `[!]` on failure) and print the task board:
 
-**B. Monitor Progress and Keep Teammates Active:**
-The Builder and Validator communicate directly via the `message` tool — the orchestrator cannot see those exchanges. You can only observe the **shared task list**. Watch for task status changes and reprint the task board each time one occurs.
-
-**The user is not present. Do not pause, ask questions, or wait for input at any point during execution. Run all tasks to completion autonomously. If a task fails after the Validator's maximum pushbacks, log it as failed in `.build/PLAN.md`, then continue with the next task without stopping.**
-
-**Watchdog — prevent idle teammates:**
-If the shared task list has not changed after a reasonable amount of time (no task moving to in-progress or completed):
-1. Check which task is currently in progress and which teammate should be active.
-2. Use the `message` tool to ping that teammate directly:
-   - If no task is in progress and pending tasks remain → ping the Builder: `"There are still pending tasks. Please claim the next task and continue."`
-   - If a task is in progress with no recent update → ping the Builder: `"Are you still working on [task]? Please continue or let me know if you're blocked."`
-3. If the teammate does not respond or progress still stalls, re-assign the task on the shared task list and ping again.
-
-Task board format:
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   TEAMS  [N of M tasks complete]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   ✓  Task 1: Project Setup          [done]
-  ◉  Task 2: Auth System            [validating...]
+  ►  Task 2: Auth System            [building...]
   ○  Task 3: API Routes             [pending]
-  ○  Task 4: Frontend               [pending]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-Status symbols (derived from shared task list only):
-- `✓` — task status is "completed"
-- `►` — task status is "in progress" (Builder is implementing)
-- `◉` — task status is "validating" (Validator is reviewing)
-- `✗` — task status is "failed" (Validator could not approve after max pushbacks)
-- `○` — task status is "pending"
+Status symbols:
+- `✓` — completed
+- `►` — in progress
+- `✗` — failed
+- `○` — pending
 
-When all tasks are completed, shut down the team, run cleanup, and print a final summary:
+If a builder subagent fails, log it as failed and continue with the next task.
+
+---
+
+## Step 5: Opus Review
+
+After all tasks complete, print:
+
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  TEAMS  All [M] tasks complete!
+  TEAMS  Reviewing implementation...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+Spawn the reviewer using the `Agent` tool:
+
+```
+Agent(
+  subagent_type: "teams:teams-reviewer",
+  model: "opus",
+  prompt: "Review the implementation for: [feature name].
+
+    Base commit (before build started): [BASE_SHA]
+    Use `git diff [BASE_SHA]..HEAD` to see all changes.
+
+    Full plan:
+    [paste .build/PLAN.md content]
+
+    Write your review to .build/REVIEW.md.
+    If mcp__Multi-CLI__Ask-Codex is available, use it for a second opinion."
+)
+```
+
+---
+
+## Step 6: Apply Fixes
+
+After the reviewer completes, read `.build/REVIEW.md`.
+
+If there are blocking findings:
+1. Print a summary of the review findings.
+2. Spawn a fix-pass builder:
+   ```
+   Agent(
+     subagent_type: "teams:teams-builder",
+     model: "sonnet",
+     prompt: "You are applying review fixes (not implementing a new task).
+
+       Review findings to fix:
+       [paste blocking findings from .build/REVIEW.md]
+
+       Platform: [web|mobile]
+
+       Fix each blocking issue. Verify the fixes work using [Playwright|Maestro].
+       If verification tools are not available, run tests/lint instead.
+       Commit all fixes together with message: 'fix: address review findings'."
+   )
+   ```
+3. Print final summary when done.
+
+If no blocking findings, print final summary directly.
+
+Final summary format:
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  TEAMS  Build complete!
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   ✓  Task 1: ...
   ✓  Task 2: ...
-  ...
+  ✓  Review: [passed | N fixes applied]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
+
+Then suggest:
+> **Build done. Run `/teams:verify` to walk through manual E2E verification.**

@@ -1,12 +1,14 @@
 # ralph-teams
 
-A Claude Code plugin that plans and builds features using a native agent team (a builder and validator). Supports a single-plan mode for most features and a phased loop mode for very large ones.
+A Claude Code plugin that plans and builds features using sequential Sonnet builder subagents with automated E2E verification, followed by an Opus code review pass.
 
 ## How it works
 
-1. `/teams-plan` — discuss what you want to build, Claude creates a plan with tasks and acceptance criteria in `.build/PLAN.md`, optionally runs an AI review of the plan, you approve, execution starts automatically
-2. Execution: a native **Agent Team** is created. The **Builder** implements one task at a time, commits, and messages the **Validator** directly to request a review. The **Validator** reviews the commit against the acceptance criteria and replies with `PASS` or `FAIL`. On `FAIL`, the Builder fixes and re-submits.
-3. E2E testing requirements and task status are tracked in `.build/PLAN.md`.
+1. `/teams:plan` — discuss what you want to build, Claude creates a plan with tasks, acceptance criteria, and verification scenarios in `.build/PLAN.md`. Optionally runs an AI review of the plan. You approve, execution starts.
+2. **Build:** For each task, a Sonnet builder subagent is spawned sequentially. Each builder implements the task, verifies it with Playwright (web) or Maestro (mobile), and commits.
+3. **Review:** After all tasks complete, an Opus reviewer checks the full implementation against acceptance criteria. It can optionally use Multi-CLI (Ask-Codex) for a second opinion. Findings are written to `.build/REVIEW.md`.
+4. **Fix:** If the review finds blocking issues, a builder subagent is spawned to apply fixes.
+5. `/teams:verify` — walk through manual E2E verification of each scenario with the user.
 
 ## Install
 
@@ -32,12 +34,13 @@ Add to your `~/.claude/settings.json`:
 
 | Command | Description |
 |---------|-------------|
-| `/teams-plan` | Discuss → plan → collect E2E requirements → optional AI review → approve → execute with a Builder + Validator team |
-| `/teams-run` | Resume an existing single plan from where it left off |
+| `/teams:plan` | Discuss → plan → optional AI review → approve → build (sequential Sonnet builders) → Opus review → apply fixes |
+| `/teams:run` | Resume an existing plan from where it left off |
+| `/teams:verify` | Walk through manual E2E verification scenario by scenario |
 
 ## Output
 
-Progress is shown as a live task board, reprinted after each status change:
+Progress is shown as a task board, reprinted after each task completes:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -48,7 +51,6 @@ Progress is shown as a live task board, reprinted after each status change:
   ►  Task 3: API Routes             [building...]
   ○  Task 4: Frontend               [pending]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-► Task 3: Building...
 ```
 
-Status symbols: `✓` done · `►` active · `⟲` retrying · `○` pending
+Status symbols: `✓` done · `►` building · `✗` failed · `○` pending
