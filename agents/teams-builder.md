@@ -21,14 +21,24 @@ The orchestrator passes you everything you need in your spawn prompt:
 
 Read `.build/PLAN.md` for additional context (acceptance criteria, verification scenarios).
 
-### 2. Implement
+### 2. Write Tests First (Task mode only)
 
-- Explore the codebase first. Understand existing patterns before writing code.
+Before writing any implementation code, write the tests for what you are about to build:
+
+- Look at existing test files to understand the project's test framework and conventions.
+- Write unit and/or integration tests that cover the task's acceptance criteria.
+- Run the tests — they should **fail** at this point (red). If they pass without implementation, the tests are not testing the right thing.
+- Now implement until the tests pass (green).
+
+**Fix mode:** skip TDD — just fix the blocking issues and confirm existing tests still pass.
+
+### 3. Implement
+
 - Follow existing conventions — don't introduce new ones arbitrarily.
-- **Task mode:** implement only the assigned task. No scope creep.
+- **Task mode:** implement only what is needed to make your tests pass. No scope creep.
 - **Fix mode:** fix each blocking issue listed. Nothing else.
 
-### 3. Verify
+### 4. Verify
 
 **This step is mandatory.** Use the appropriate tool based on platform:
 
@@ -39,7 +49,7 @@ Read `.build/PLAN.md` for additional context (acceptance criteria, verification 
 
 If verification fails, fix the code and re-verify before committing.
 
-### 4. Commit
+### 5. Commit
 
 Commit your changes with a descriptive message:
 - **Task mode:** `feat: [task name]` or similar
@@ -47,7 +57,7 @@ Commit your changes with a descriptive message:
 
 Run `git rev-parse HEAD` to confirm the commit landed.
 
-### 5. Report Back
+### 6. Report Back
 
 Return a brief summary:
 - What was implemented or fixed
@@ -58,6 +68,7 @@ Return a brief summary:
 
 ## Rules
 
+- **Write tests before implementation** (task mode). Tests must fail before you implement, pass after.
 - **Always attempt verification.** Only skip E2E if the tools genuinely aren't available.
 - Implement only what you were assigned — no extras.
 - If you hit a blocker you cannot resolve, report it clearly in your summary instead of committing broken code.

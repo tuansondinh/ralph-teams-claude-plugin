@@ -38,6 +38,7 @@ Read all files that were changed. Evaluate:
 - Are there bugs, logic errors, or missing edge cases?
 - Is the code quality acceptable (no security issues, no broken patterns)?
 - Were all tasks completed?
+- **Did the builder write tests?** Each task should have unit or integration tests covering its acceptance criteria. Missing tests are a **blocking** finding.
 
 ### 3. Build + Test Check
 
