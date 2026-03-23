@@ -18,7 +18,7 @@ Inside Claude Code, run:
 
 ```
 /plugin marketplace add tuansondinh/ralph-teams-claude-plugin
-/plugin install ralph-teams@tuansondinh/ralph-teams-claude-plugin
+/plugin install ralph-teams@ralph-teams-claude-plugin
 ```
 
 Then run `/teams:plan` in any project.
