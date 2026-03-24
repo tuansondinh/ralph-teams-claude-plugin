@@ -5,14 +5,14 @@
   },
   "metadata": {
     "description": "Agent team skills for Claude Code — plan any feature and execute it with sequential Sonnet builders (Playwright/Maestro verified) and an Opus code reviewer.",
-    "version": "1.5.0"
+    "version": "1.5.1"
   },
   "plugins": [
     {
       "name": "ralph-teams",
       "source": "./",
       "description": "Plan a feature with Claude, then execute it using sequential or parallel Sonnet builder subagents with E2E verification, followed by an Opus review pass. Full lifecycle tracked in the plan file.",
-      "version": "1.5.0",
+      "version": "1.5.1",
       "keywords": ["agents", "teams", "builder", "reviewer", "planning", "automation", "playwright", "maestro"],
       "category": "productivity",
       "skills": "./skills/"
