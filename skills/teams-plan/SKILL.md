@@ -1,6 +1,6 @@
 ---
 name: teams-plan
-description: "Plan and build a feature. Orchestrator plans, spawns sequential Sonnet builder subagents per task (with Playwright/Maestro verification), then an Opus reviewer, then a builder to apply fixes. Supports parallel mode for independent tasks."
+description: "Plan and build a feature. Orchestrator plans, spawns sequential Sonnet builder subagents per phase (with Playwright/Maestro verification), then an Opus reviewer, then a builder to apply fixes. Supports parallel mode for independent phases."
 user-invocable: true
 ---
 
@@ -16,20 +16,20 @@ Ask: **"What do you want to build?"**
 
 Discuss with the user. Identify the target platform: **web** or **mobile** (this determines whether the builder uses Playwright or Maestro for verification).
 
-**Task sizing:** Each task runs in its own builder agent with a 200k token context window — everything in the task must fit within one session. Tasks should be meaningful chunks of work, not single lines. Use **subtasks** to break a task into concrete steps the builder will follow.
-- **Too small:** a task with only one trivial action — merge it into a related task or make it a subtask.
-- **Too big:** a task whose subtasks collectively require more code than fits in one session — split into multiple tasks.
-- **Right size:** "Implement user authentication" (with subtasks: signup endpoint, login endpoint, JWT middleware, tests), "Build product listing page" (with subtasks: list component, filter sidebar, pagination).
+**Phase sizing:** Each phase runs in its own builder agent with a 200k token context window. A well-sized phase should fill **50–60% of that context** — meaning the builder will read, write, and reason about enough code that it uses roughly half its available context doing the work. Phases contain tasks (concrete steps the builder follows).
+- **Too small:** a phase that takes only a few minutes or touches one file — merge it into a related phase or make it a task within a larger phase.
+- **Too big:** a phase whose tasks collectively require more code than fits in one builder session — split it into two phases.
+- **Right size:** "Implement full auth system" (tasks: user model + DB migration, signup/login endpoints, JWT middleware + refresh tokens, password reset flow, email verification, auth guards on all protected routes, unit + integration tests), "Build product catalog" (tasks: product model + seed data, list page with filters + pagination, detail page, search endpoint, cart integration, component tests).
 
-> **Rule of thumb:** a task = one meaningful feature area. Subtasks = the concrete steps the builder takes to complete it. When in doubt, split at the task level.
+> **Rule of thumb:** a phase = one meaningful feature area with enough depth to keep a builder busy for a substantial session. Tasks = the concrete steps the builder takes to complete it. Aim for 4–8 tasks per phase. When in doubt, make phases larger rather than smaller.
 
-**Task complexity:** For each task, assign a complexity level — this determines which model the builder uses:
-- `simple` → `haiku`: truly trivial tasks only — renaming, copy changes, config tweaks, adding a single field
-- `standard` → `sonnet`: everything else — the default for any task with real logic, UI, CRUD, auth, migrations, architecture, etc.
+**Phase complexity:** For each phase, assign a complexity level — this determines which model the builder uses:
+- `simple` → `haiku`: truly trivial phases only — renaming, copy changes, config tweaks, adding a single field
+- `standard` → `sonnet`: everything else — the default for any phase with real logic, UI, CRUD, auth, migrations, architecture, etc.
 
-**Parallel tasks:** Identify tasks that are fully independent (no shared files, no ordering dependency) and can safely run at the same time. Annotate these with `parallel-group: [A/B/C/...]`. Tasks sharing the same group label will run concurrently in parallel mode. Tasks without a `parallel-group` annotation always run sequentially.
+**Parallel phases:** Identify phases that are fully independent (no shared files, no ordering dependency) and can safely run at the same time. Annotate these with `parallel-group: [A/B/C/...]`. Phases sharing the same group label will run concurrently in parallel mode. Phases without a `parallel-group` annotation always run sequentially.
 
-> **Safety rule:** Only mark tasks as parallel if they touch completely different parts of the codebase and have no dependencies on each other's output. When in doubt, leave them sequential.
+> **Safety rule:** Only mark phases as parallel if they touch completely different parts of the codebase and have no dependencies on each other's output. When in doubt, leave them sequential.
 
 **Prepare the build directory:**
 
@@ -54,17 +54,17 @@ Generated: [date]
 Platform: web | mobile
 Status: draft
 
-## Tasks
-1. [ ] Task 1: [Description] — complexity: simple
-   - [Subtask 1 description]
-   - [Subtask 2 description]
-2. [ ] Task 2: [Description] — complexity: standard — parallel-group: A
-   - [Subtask 1 description]
-   - [Subtask 2 description]
-   - [Subtask 3 description]
-3. [ ] Task 3: [Description] — complexity: standard — parallel-group: A
-   - [Subtask 1 description]
-   - [Subtask 2 description]
+## Phases
+1. [ ] Phase 1: [Description] — complexity: simple
+   - [Task 1 description]
+   - [Task 2 description]
+2. [ ] Phase 2: [Description] — complexity: standard — parallel-group: A
+   - [Task 1 description]
+   - [Task 2 description]
+   - [Task 3 description]
+3. [ ] Phase 3: [Description] — complexity: standard — parallel-group: A
+   - [Task 1 description]
+   - [Task 2 description]
 
 ## Acceptance Criteria
 - [Criterion 1]
@@ -87,7 +87,7 @@ After writing the draft plan, ask the user:
 
 If **yes**:
 1. **Check for Multi-CLI MCP:** Look for `mcp__Multi-CLI__Ask-Codex` in your available tools (use `ToolSearch` if needed).
-   - If available: read `.ralph-teams/PLAN-[N].md` and call `mcp__Multi-CLI__Ask-Codex` with the plan content and the prompt: *"Review this implementation plan. Identify missing tasks, edge cases, or architectural gaps. Be concise."*
+   - If available: read `.ralph-teams/PLAN-[N].md` and call `mcp__Multi-CLI__Ask-Codex` with the plan content and the prompt: *"Review this implementation plan. Identify missing phases, edge cases, or architectural gaps. Be concise."*
    - If not available: use the `Agent` tool to spawn a general-purpose subagent with `model: opus` and prompt it to review `.ralph-teams/PLAN-[N].md` for completeness, edge cases, and architectural gaps.
 2. Evaluate the feedback. Incorporate valid findings into `.ralph-teams/PLAN-[N].md`.
 3. Briefly tell the user what changed.
@@ -108,11 +108,11 @@ Display `.ralph-teams/PLAN-[N].md` and ask:
 
 After approval, ask the user:
 
-> **"Would you like to run tasks in parallel or sequential mode?**
-> - **Sequential** (default): tasks run one at a time in order — safer, easier to debug
-> - **Parallel**: independent task groups run simultaneously — faster, but tasks must not share files or depend on each other
+> **"Would you like to run phases in parallel or sequential mode?**
+> - **Sequential** (default): phases run one at a time in order — safer, easier to debug
+> - **Parallel**: independent phase groups run simultaneously — faster, but phases must not share files or depend on each other
 >
-> The plan has [N] task(s) marked for parallel execution. Reply `parallel` or `sequential`."
+> The plan has [N] phase(s) marked for parallel execution. Reply `parallel` or `sequential`."
 
 Save the answer as `EXEC_MODE` (`parallel` or `sequential`).
 
@@ -135,83 +135,83 @@ When approved:
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    ```
 
-**Group tasks into execution batches:**
-- Tasks without `parallel-group` → each is its own batch (always sequential)
-- Tasks sharing the same `parallel-group` label → form one batch
-- Batches execute in the order the first task of each batch appears in the plan
+**Group phases into execution batches:**
+- Phases without `parallel-group` → each is its own batch (always sequential)
+- Phases sharing the same `parallel-group` label → form one batch
+- Batches execute in the order the first phase of each batch appears in the plan
 
-Example grouping for tasks `[1, 2(A), 3(A), 4, 5(B), 6(B)]`:
-- Batch 1: Task 1 (sequential)
-- Batch 2: Tasks 2+3 (parallel-group A)
-- Batch 3: Task 4 (sequential)
-- Batch 4: Tasks 5+6 (parallel-group B)
+Example grouping for phases `[1, 2(A), 3(A), 4, 5(B), 6(B)]`:
+- Batch 1: Phase 1 (sequential)
+- Batch 2: Phases 2+3 (parallel-group A)
+- Batch 3: Phase 4 (sequential)
+- Batch 4: Phases 5+6 (parallel-group B)
 
 **For each batch, execute as follows:**
 
-**If `EXEC_MODE = sequential` OR batch has only 1 task:**
+**If `EXEC_MODE = sequential` OR batch has only 1 phase:**
 
 Spawn one builder at a time and wait for completion:
 
 ```
 Agent(
   subagent_type: "teams:teams-builder",
-  model: "[haiku | sonnet based on task complexity]",
-  prompt: "You are implementing Task [N] of [M]: [task description].
+  model: "[haiku | sonnet based on phase complexity]",
+  prompt: "You are implementing Phase [N] of [M]: [phase description].
 
-    Subtasks to complete:
-    [list subtasks from the task]
+    Tasks to complete:
+    [list tasks from the phase]
 
     Platform: [web|mobile]
 
     Full plan:
     [paste .ralph-teams/PLAN-[N].md content]
 
-    Your task: implement Task [N] only, completing all its subtasks. Verify it works using [Playwright|Maestro], then commit.
+    Your assignment: implement Phase [N] only, completing all its tasks. Verify it works using [Playwright|Maestro], then commit.
     If [Playwright|Maestro] tools are not available, run tests/lint instead and note that E2E verification was skipped."
 )
 ```
 
-**If `EXEC_MODE = parallel` AND batch has 2+ tasks:**
+**If `EXEC_MODE = parallel` AND batch has 2+ phases:**
 
-Spawn all tasks in the batch simultaneously using `run_in_background: true`, then wait for all to complete before proceeding:
+Spawn all phases in the batch simultaneously using `run_in_background: true`, then wait for all to complete before proceeding:
 
 ```
-# Spawn all tasks in the batch at the same time:
+# Spawn all phases in the batch at the same time:
 Agent(
   subagent_type: "teams:teams-builder",
   model: "[haiku | sonnet]",
   run_in_background: true,
-  name: "builder-task-[N]",
-  prompt: "You are implementing Task [N] of [M] (running in parallel with Task [N2]): [task description].
+  name: "builder-phase-[N]",
+  prompt: "You are implementing Phase [N] of [M] (running in parallel with Phase [N2]): [phase description].
 
-    Subtasks to complete:
-    [list subtasks]
+    Tasks to complete:
+    [list tasks]
 
     Platform: [web|mobile]
 
     Full plan:
     [paste PLAN-[N].md content]
 
-    IMPORTANT: You are running in parallel with other builders. Only modify files for your specific task.
-    Do not modify shared config files, package.json, or files touched by parallel tasks.
-    Your task: implement Task [N] only. Verify it works, then commit with message: 'feat: [task name]'."
+    IMPORTANT: You are running in parallel with other builders. Only modify files for your specific phase.
+    Do not modify shared config files, package.json, or files touched by parallel phases.
+    Your assignment: implement Phase [N] only. Verify it works, then commit with message: 'feat: [phase name]'."
 )
 
-# ... spawn all other tasks in the batch with run_in_background: true ...
+# ... spawn all other phases in the batch with run_in_background: true ...
 
 # Then wait for all background agents in this batch to complete before moving to the next batch.
 ```
 
-After each batch completes, update `.ralph-teams/PLAN-[N].md` (change `[ ]` to `[x]` on success, `[!]` on failure for each task) and print the task board:
+After each batch completes, update `.ralph-teams/PLAN-[N].md` (change `[ ]` to `[x]` on success, `[!]` on failure for each phase) and print the phase board:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  RALPH-TEAMS  [N of M tasks complete]  [SEQUENTIAL | PARALLEL]
+  RALPH-TEAMS  [N of M phases complete]  [SEQUENTIAL | PARALLEL]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  ✓  Task 1: Project Setup          [done]        (haiku)
-  ►  Task 2: Auth System            [building...] (sonnet) ┐ parallel-group A
-  ►  Task 3: DB Schema              [building...] (haiku)  ┘
-  ○  Task 4: API Routes             [pending]     (sonnet)
+  ✓  Phase 1: Project Setup          [done]        (haiku)
+  ►  Phase 2: Auth System            [building...] (sonnet) ┐ parallel-group A
+  ►  Phase 3: DB Schema              [building...] (haiku)  ┘
+  ○  Phase 4: API Routes             [pending]     (sonnet)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -227,7 +227,7 @@ If a builder subagent fails, log it as failed and continue with the next batch.
 
 ## Step 5: Opus Review
 
-After all tasks complete, print:
+After all phases complete, print:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -268,7 +268,7 @@ If there are blocking findings:
    Agent(
      subagent_type: "teams:teams-builder",
      model: "sonnet",
-     prompt: "You are applying review fixes (not implementing a new task).
+     prompt: "You are applying review fixes (not implementing a new phase).
 
        Review findings to fix (from '## Review' section of .ralph-teams/PLAN-[N].md):
        [paste blocking findings]
@@ -289,8 +289,8 @@ Final summary format:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   RALPH-TEAMS  Plan #[N] — Build complete!
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  ✓  Task 1: ...
-  ✓  Task 2: ...
+  ✓  Phase 1: ...
+  ✓  Phase 2: ...
   ✓  Review: [passed | N fixes applied]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```

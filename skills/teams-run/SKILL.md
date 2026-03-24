@@ -1,12 +1,12 @@
 ---
 name: teams-run
-description: "Resume building a single Teams plan. Orchestrator spawns sequential or parallel builder subagents per incomplete task, then an Opus reviewer, then applies fixes."
+description: "Resume building a single Teams plan. Orchestrator spawns sequential or parallel builder subagents per incomplete phase, then an Opus reviewer, then applies fixes."
 user-invocable: true
 ---
 
 # Teams: Run (Resume Build)
 
-You are the orchestrator. Resume an existing build by running all incomplete tasks, then reviewing and applying fixes.
+You are the orchestrator. Resume an existing build by running all incomplete phases, then reviewing and applying fixes.
 
 ---
 
@@ -17,7 +17,7 @@ Read `.ralph-teams/PLAN.md`. If not found:
 
 Identify:
 - Plan ID (the `Plan ID:` field — e.g. `#2`)
-- All tasks, their status (`[x]` = done, `[!]` = failed, `[ ]` = incomplete), their complexity annotation (`complexity: simple` or `complexity: standard`), and any `parallel-group` annotations
+- All phases, their status (`[x]` = done, `[!]` = failed, `[ ]` = incomplete), their complexity annotation (`complexity: simple` or `complexity: standard`), and any `parallel-group` annotations
 - Platform (web or mobile)
 - Verification scenarios
 
@@ -25,12 +25,12 @@ Print the current state:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  RALPH-TEAMS Plan #[N] — Resuming — [N of M tasks already done]
+  RALPH-TEAMS Plan #[N] — Resuming — [N of M phases already done]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  ✓  Task 1: Project Setup          [done]
-  ✓  Task 2: Auth System            [done]
-  ○  Task 3: API Routes             [pending]
-  ○  Task 4: Frontend               [pending]
+  ✓  Phase 1: Project Setup          [done]
+  ✓  Phase 2: Auth System            [done]
+  ○  Phase 3: API Routes             [pending]
+  ○  Phase 4: Frontend               [pending]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -40,11 +40,11 @@ Print the current state:
 
 Ask the user:
 
-> **"Would you like to run remaining tasks in parallel or sequential mode?**
-> - **Sequential** (default): tasks run one at a time in order — safer, easier to debug
-> - **Parallel**: independent task groups run simultaneously — faster, but tasks must not share files or depend on each other
+> **"Would you like to run remaining phases in parallel or sequential mode?**
+> - **Sequential** (default): phases run one at a time in order — safer, easier to debug
+> - **Parallel**: independent phase groups run simultaneously — faster, but phases must not share files or depend on each other
 >
-> The plan has [N] incomplete task(s), [M] of which are marked for parallel execution. Reply `parallel` or `sequential`."
+> The plan has [N] incomplete phase(s), [M] of which are marked for parallel execution. Reply `parallel` or `sequential`."
 
 Save the answer as `EXEC_MODE` (`parallel` or `sequential`).
 
@@ -58,82 +58,82 @@ git rev-parse HEAD
 ```
 Save this as `BASE_SHA`.
 
-**Group incomplete tasks into execution batches:**
-- Tasks without `parallel-group` → each is its own batch (always sequential)
-- Tasks sharing the same `parallel-group` label → form one batch
-- Batches execute in the order the first task of each batch appears in the plan
-- Skip already-completed tasks (`[x]`)
+**Group incomplete phases into execution batches:**
+- Phases without `parallel-group` → each is its own batch (always sequential)
+- Phases sharing the same `parallel-group` label → form one batch
+- Batches execute in the order the first phase of each batch appears in the plan
+- Skip already-completed phases (`[x]`)
 
-Pick the model from the task's complexity annotation:
+Pick the model from the phase's complexity annotation:
 - `complexity: simple` → `model: "haiku"`
 - `complexity: standard` → `model: "sonnet"`
 
 **For each batch, execute as follows:**
 
-**If `EXEC_MODE = sequential` OR batch has only 1 task:**
+**If `EXEC_MODE = sequential` OR batch has only 1 phase:**
 
 Spawn one builder at a time and wait for completion:
 
 ```
 Agent(
   subagent_type: "teams:teams-builder",
-  model: "[haiku | sonnet based on task complexity]",
-  prompt: "You are implementing Task [N] of [M]: [task description].
+  model: "[haiku | sonnet based on phase complexity]",
+  prompt: "You are implementing Phase [N] of [M]: [phase description].
 
-    Subtasks to complete:
-    [list subtasks from the task]
+    Tasks to complete:
+    [list tasks from the phase]
 
     Platform: [web|mobile]
 
     Full plan:
     [paste .ralph-teams/PLAN.md content]
 
-    Your task: implement Task [N] only, completing all its subtasks. Verify it works using [Playwright|Maestro], then commit.
+    Your assignment: implement Phase [N] only, completing all its tasks. Verify it works using [Playwright|Maestro], then commit.
     If [Playwright|Maestro] tools are not available, run tests/lint instead and note that E2E verification was skipped."
 )
 ```
 
-**If `EXEC_MODE = parallel` AND batch has 2+ tasks:**
+**If `EXEC_MODE = parallel` AND batch has 2+ phases:**
 
-Spawn all tasks in the batch simultaneously using `run_in_background: true`, then wait for all to complete before proceeding:
+Spawn all phases in the batch simultaneously using `run_in_background: true`, then wait for all to complete before proceeding:
 
 ```
-# Spawn all tasks in the batch at the same time:
+# Spawn all phases in the batch at the same time:
 Agent(
   subagent_type: "teams:teams-builder",
   model: "[haiku | sonnet]",
   run_in_background: true,
-  name: "builder-task-[N]",
-  prompt: "You are implementing Task [N] of [M] (running in parallel with Task [N2]): [task description].
+  name: "builder-phase-[N]",
+  prompt: "You are implementing Phase [N] of [M] (running in parallel with Phase [N2]): [phase description].
 
-    Subtasks to complete:
-    [list subtasks]
+    Tasks to complete:
+    [list tasks]
 
     Platform: [web|mobile]
 
     Full plan:
     [paste PLAN.md content]
 
-    IMPORTANT: You are running in parallel with other builders. Only modify files for your specific task.
-    Do not modify shared config files, package.json, or files touched by parallel tasks.
-    Your task: implement Task [N] only. Verify it works, then commit with message: 'feat: [task name]'."
+    IMPORTANT: You are running in parallel with other builders. Only modify files for your specific phase.
+    Do not modify shared config files, package.json, or files touched by parallel phases.
+    Your assignment: implement Phase [N] only. Verify it works, then commit with message: 'feat: [phase name]'."
 )
 
-# ... spawn all other tasks in the batch with run_in_background: true ...
+# ... spawn all other phases in the batch with run_in_background: true ...
 
 # Then wait for all background agents in this batch to complete before moving to the next batch.
 ```
 
-After each batch completes, update `.ralph-teams/PLAN.md` (change `[ ]` to `[x]` on success, `[!]` on failure for each task) and reprint the task board:
+After each batch completes, update `.ralph-teams/PLAN.md` (change `[ ]` to `[x]` on success, `[!]` on failure for each phase) and reprint the phase board:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  RALPH-TEAMS  [N of M tasks complete]  [SEQUENTIAL | PARALLEL]
+  RALPH-TEAMS  [N of M phases complete]  [SEQUENTIAL | PARALLEL]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  ✓  Task 1: Project Setup          [done]        (haiku)
-  ►  Task 2: Auth System            [building...] (sonnet) ┐ parallel-group A
-  ►  Task 3: DB Schema              [building...] (haiku)  ┘
-  ○  Task 4: API Routes             [pending]     (sonnet)
+  ✓  Phase 1: Project Setup          [done]        (haiku)
+  ►  Phase 2: Auth System            [building...] (sonnet) ┐ parallel-group A
+  ►  Phase 3: DB Schema              [building...] (haiku)  ┘
+  ○  Phase 4: API Routes             [pending]     (sonnet)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -143,7 +143,7 @@ If a builder subagent fails, log it as failed and continue with the next batch.
 
 ## Step 3: Opus Review
 
-After all tasks complete, print:
+After all phases complete, print:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -181,7 +181,7 @@ Read the `## Review` section from `.ralph-teams/PLAN.md`. If there are blocking 
    Agent(
      subagent_type: "teams:teams-builder",
      model: "sonnet",
-     prompt: "You are applying review fixes (not implementing a new task).
+     prompt: "You are applying review fixes (not implementing a new phase).
 
        Review findings to fix (from '## Review' section of .ralph-teams/PLAN.md):
        [paste blocking findings]
@@ -210,8 +210,8 @@ Final summary:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   RALPH-TEAMS  Plan #[N] — Build complete!
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  ✓  Task 1: ...
-  ✓  Task 2: ...
+  ✓  Phase 1: ...
+  ✓  Phase 2: ...
   ✓  Review: [passed | N fixes applied]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```

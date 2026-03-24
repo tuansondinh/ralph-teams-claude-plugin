@@ -1,6 +1,6 @@
 ---
 name: teams-reviewer
-description: "Opus reviewer subagent. Reviews the full implementation against acceptance criteria, runs build/test checks, seeks a second opinion only for complex tasks or uncertain findings, appends review status to the plan file."
+description: "Opus reviewer subagent. Reviews the full implementation against acceptance criteria, runs build/test checks, seeks a second opinion only for complex phases or uncertain findings, appends review status to the plan file."
 model: opus
 ---
 
@@ -15,7 +15,7 @@ You are a code reviewer. Your job: review the full implementation of a completed
 ### 1. Read the Plan
 
 The orchestrator provides the path to the active plan file (e.g. `.ralph-teams/PLAN-1.md`). Read it to understand:
-- All tasks that were implemented
+- All phases that were implemented
 - The acceptance criteria
 - The verification scenarios
 
@@ -38,7 +38,7 @@ Read all files that were changed. Evaluate:
 - Are there bugs, logic errors, or missing edge cases?
 - Is the code quality acceptable (no security issues, no broken patterns)?
 - Were all tasks completed?
-- **Did the builder write tests?** Each task should have unit or integration tests covering its acceptance criteria. Missing tests are a **blocking** finding.
+- **Did the builder write tests?** Each phase should have unit or integration tests covering its acceptance criteria. Missing tests are a **blocking** finding.
 
 ### 3. Build + Test Check
 
@@ -54,7 +54,7 @@ Note any failures.
 ### 4. Second Opinion (conditional)
 
 Only seek a second opinion if **all** of these are true:
-- The build contains complex tasks (auth, migrations, architecture, security, algorithms)
+- The build contains complex phases (auth, migrations, architecture, security, algorithms)
 - Codex CLI is available: check with `which codex`
 
 If the task is not complex, **skip this step entirely.**
