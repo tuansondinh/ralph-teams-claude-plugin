@@ -1,6 +1,6 @@
 # ralph-teams
 
-A Claude Code plugin that plans and builds features using sequential builder subagents (Haiku or Sonnet based on task complexity). Each task is broken into subtasks the builder works through in one session — automated E2E verification, an Opus code review pass, and manual verification with integrated debug.
+A Claude Code plugin that plans and builds features using sequential or parallel builder subagents (Haiku or Sonnet based on task complexity). Each task is broken into subtasks the builder works through in one session — automated E2E verification, an Opus code review pass, and manual verification with integrated debug. The entire lifecycle (build, review, verify, debug, docs) is tracked in a single plan file.
 
 ## Quick Start
 
@@ -37,39 +37,41 @@ flowchart TD
     classDef optional fill:#ffe4e1,stroke:#ff9999,stroke-width:1px,stroke-dasharray:4,color:#333
 
     P1["/teams:plan — Discuss feature, write plan, get approval"]:::cmd
-    P[".ralph-teams/PLAN.md"]:::doc
+    P[".ralph-teams/PLAN-N.md (single lifecycle doc)"]:::doc
     CX1["Codex second opinion on plan (optional)"]:::optional
 
     P1 --> P
     P --> CX1
 
-    P2["/teams:run — Build each task sequentially"]:::cmd
+    P2["/teams:run — Build tasks (sequential or parallel)"]:::cmd
 
     CX1 -->|"approved"| P2
 
     subgraph Build[" "]
         direction TB
         B1["Haiku/Sonnet Builder — Task 1"]:::agent
-        B2["Haiku/Sonnet Builder — Task 2"]:::agent
+        B2["Haiku/Sonnet Builder — Task 2 ┐ parallel"]:::agent
+        B3["Haiku/Sonnet Builder — Task 3 ┘ parallel"]:::agent
         BN["Haiku/Sonnet Builder — Task N"]:::agent
-        B1 --> B2 --> BN
+        B1 --> B2
+        B1 --> B3
+        B2 --> BN
+        B3 --> BN
     end
 
     P2 -->|"one fresh agent per task"| Build
 
-    R["Opus Reviewer — Reviews all changes"]:::agent
+    R["Opus Reviewer — appends ## Review to plan"]:::agent
     CX2["Codex second opinion on review (optional)"]:::optional
-    REV[".ralph-teams/REVIEW.md"]:::doc
     BF["Sonnet Builder — Applies blocking fixes"]:::agent
     DOCS["Haiku Scribe — Updates docs (optional)"]:::optional
 
     Build --> R
     R --> CX2
-    CX2 --> REV
-    REV --> BF
+    CX2 --> BF
     BF --> DOCS
 
-    P3["/teams-verify — Walk through scenarios manually"]:::cmd
+    P3["/teams:verify — Walk through scenarios manually"]:::cmd
     DBG["teams-debug — Fix bugs against the plan"]:::optional
     DOCS --> P3
     P3 --> DBG
@@ -83,11 +85,31 @@ Each task runs in its own isolated subagent with a clean 200k token context wind
 
 | Command | What it does |
 |---------|-------------|
-| `/teams-plan` | Discuss → plan → optional AI review → approve → build → Opus review → fixes |
-| `/teams-run` | Resume an existing plan from where it left off |
-| `/teams-verify` | Walk through manual E2E verification scenario by scenario |
-| `/teams-debug` | Fix a bug in relation to the active plan — usable anytime |
-| `/teams-document` | Update existing docs (README, ARCHITECTURE.md, etc.) for the latest plan |
+| `/teams:plan` | Discuss → plan → optional AI review → approve → build → Opus review → fixes |
+| `/teams:run` | Resume an existing plan from where it left off |
+| `/teams:verify` | Walk through manual E2E verification scenario by scenario |
+| `/teams:debug` | Fix a bug in relation to the active plan — usable anytime |
+| `/teams:document` | Update existing docs (README, ARCHITECTURE.md, etc.) for the latest plan |
+
+---
+
+## Parallel mode
+
+When planning, independent tasks are annotated with `parallel-group`. Before execution starts, you choose:
+
+- **Sequential** — tasks run one at a time (default, safer)
+- **Parallel** — tasks in the same group run simultaneously
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  RALPH-TEAMS  2 of 5 tasks complete  [PARALLEL]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ✓  Task 1: Project Setup          [done]        (haiku)
+  ►  Task 2: Auth System            [building...] (sonnet) ┐ parallel-group A
+  ►  Task 3: DB Schema              [building...] (haiku)  ┘
+  ○  Task 4: API Routes             [pending]     (sonnet)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
 
 ---
 
@@ -108,12 +130,17 @@ Each task runs in its own isolated subagent with a clean 200k token context wind
 
 ---
 
-## Output files
+## Plan file — single lifecycle document
 
-All build artifacts are written to `./.ralph-teams/` in your project:
+Everything is tracked in one file per feature: `.ralph-teams/PLAN-N.md`. Each stage appends a section as it completes:
 
-| File | Contents |
-|------|----------|
-| `.ralph-teams/PLAN.md` | Plan ID, tasks with complexity, acceptance criteria, verification scenarios |
-| `.ralph-teams/REVIEW.md` | Opus reviewer findings (blocking / non-blocking) |
-| `.ralph-teams/VERIFY.md` | Manual verification results |
+| Section | Appended by |
+|---------|-------------|
+| Tasks, criteria, scenarios | Orchestrator at plan creation |
+| `## Review` | Opus reviewer after build |
+| `## Review Fixes Applied` | Orchestrator after fix-pass |
+| `## Verification` | Verify skill after manual walkthrough |
+| `## Debug Fix` | Debug skill after each bug fix |
+| `## Documentation` | Document skill after scribe runs |
+
+No separate `REVIEW.md` or `VERIFY.md` — the plan is the full record from start to finish.

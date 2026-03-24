@@ -1,6 +1,6 @@
 # ralph-teams-plugin — Codebase Reference
 
-**Version:** 1.4.0 | **Type:** Claude Code Plugin (Markdown-based, no compiled code)
+**Version:** 1.4.2 | **Type:** Claude Code Plugin (Markdown-based, no compiled code)
 
 ---
 
@@ -9,16 +9,17 @@
 ```
 ralph-teams-plugin/
 ├── .claude-plugin/
-│   └── marketplace.json          # Plugin registry metadata
+│   ├── plugin.json               # Plugin metadata (name, version, description)
+│   └── marketplace.json          # Plugin registry metadata (must match plugin.json version)
 ├── agents/
 │   ├── teams-builder.md          # Sonnet builder subagent (implements tasks + applies review fixes)
-│   └── teams-reviewer.md         # Opus reviewer subagent (reviews full implementation)
+│   └── teams-reviewer.md         # Opus reviewer subagent (appends ## Review to plan file)
 ├── skills/
 │   ├── teams-plan/SKILL.md       # /teams:plan — discuss → plan → build → review → fix
 │   ├── teams-run/SKILL.md        # /teams:run  — resume an existing plan
 │   ├── teams-verify/SKILL.md     # /teams:verify — manual E2E verification walkthrough
-│   ├── loop-plan/SKILL.md        # /teams:loop-plan — phased plan + execute
-│   └── loop-run/SKILL.md         # /teams:loop-run  — resume a phased plan
+│   ├── teams-document/SKILL.md   # /teams:document — update project docs
+│   └── debug/SKILL.md            # /teams:debug — fix bugs against active plan
 ├── README.md
 ├── FLOW.md                       # Mermaid execution flow diagram
 └── codebase.md                   # This file
@@ -37,7 +38,7 @@ Frontmatter fields: `name`, `description`, `model` (sonnet/opus/haiku).
 | Agent | Model | Role |
 |-------|-------|------|
 | `teams-builder.md` | Sonnet | Implements a single task or applies review fixes. Verifies with Playwright (web) or Maestro (mobile) before committing. |
-| `teams-reviewer.md` | Opus | Reviews the full implementation against acceptance criteria. Runs tests. Optionally consults Codex via Multi-CLI MCP. Writes `.ralph-teams/REVIEW.md`. |
+| `teams-reviewer.md` | Opus | Reviews the full implementation against acceptance criteria. Runs tests. Optionally consults Codex. Appends `## Review` section to the plan file. |
 
 ### Skill Files (`skills/`)
 
@@ -45,80 +46,77 @@ Frontmatter fields: `name`, `description`, `user-invocable: true`.
 
 | Skill file | Command | Purpose |
 |------------|---------|---------|
-| `teams-plan/SKILL.md` | `/teams:plan` | 6-step flow: discuss → plan → optional AI review → approve → sequential builders → Opus review → apply fixes |
-| `teams-run/SKILL.md` | `/teams:run` | Resume a plan; runs incomplete tasks, then review + fix |
-| `teams-verify/SKILL.md` | `/teams:verify` | Walk user through manual E2E verification scenario by scenario |
-| `loop-plan/SKILL.md` | `/teams:loop-plan` | Phased plan + execute (multi-phase mode) |
-| `loop-run/SKILL.md` | `/teams:loop-run` | Resume a phased plan |
+| `teams-plan/SKILL.md` | `/teams:plan` | Discuss → plan (with parallel-group annotations) → optional AI review → approve → choose sequential/parallel → build → Opus review → apply fixes |
+| `teams-run/SKILL.md` | `/teams:run` | Resume a plan; choose sequential/parallel → run incomplete tasks → review + fix |
+| `teams-verify/SKILL.md` | `/teams:verify` | Walk user through manual E2E verification; appends `## Verification` to plan |
+| `teams-document/SKILL.md` | `/teams:document` | Spawn Haiku scribe to update project docs; appends `## Documentation` to plan |
+| `debug/SKILL.md` | `/teams:debug` | Fix a bug against the active plan; appends `## Debug Fix` to plan |
 
 ---
 
 ## Execution Model
 
+**Sequential mode:**
 ```
-Orchestrator (plan or run skill)
-  ├── Agent(teams-builder, sonnet) → Task 1 → verify → commit
-  ├── Agent(teams-builder, sonnet) → Task 2 → verify → commit
+Orchestrator (teams-plan or teams-run)
+  ├── Agent(teams-builder, haiku/sonnet) → Task 1 → verify → commit
+  ├── Agent(teams-builder, haiku/sonnet) → Task 2 → verify → commit
   ├── ...
-  ├── Agent(teams-reviewer, opus)  → review all changes → .ralph-teams/REVIEW.md
-  └── Agent(teams-builder, sonnet) → apply review fixes → commit
+  ├── Agent(teams-reviewer, opus)        → appends ## Review to PLAN-N.md
+  └── Agent(teams-builder, sonnet)       → apply review fixes → commit
 ```
 
-- Builders are spawned **sequentially** — one per task, one at a time
-- Each builder verifies its work with **Playwright** (web) or **Maestro** (mobile) before committing
-- If verification tools are unavailable, builders fall back to running tests/lint
-- The Opus reviewer runs after all tasks complete, reviewing the full diff from `BASE_SHA`
-- The reviewer optionally uses `mcp__Multi-CLI__Ask-Codex` for a second opinion
+**Parallel mode (tasks in same parallel-group run simultaneously):**
+```
+Orchestrator
+  ├── Agent(teams-builder) → Task 1 → verify → commit        [sequential batch]
+  ├── Agent(teams-builder, bg) → Task 2 ┐                    [parallel batch A]
+  ├── Agent(teams-builder, bg) → Task 3 ┘ → both complete
+  ├── Agent(teams-builder) → Task 4 → verify → commit        [sequential batch]
+  ├── Agent(teams-reviewer, opus) → appends ## Review
+  └── Agent(teams-builder, sonnet) → apply fixes → commit
+```
+
+- Model per task: `complexity: simple` → haiku, `complexity: standard` → sonnet
+- Each builder verifies with **Playwright** (web) or **Maestro** (mobile) before committing
+- If verification tools are unavailable, builders fall back to tests/lint
+- The Opus reviewer runs after all tasks, reviewing the full diff from `BASE_SHA`
+- The reviewer optionally uses Codex CLI for a second opinion (complex tasks only)
 - If blocking findings exist, a final builder is spawned to apply fixes
 
 ---
 
-## Key Contracts
+## Plan File — Single Lifecycle Document
 
-### Builder subagent
-1. Receives assignment from orchestrator (task + subtasks, or review fixes)
-2. Reads `.ralph-teams/PLAN.md` for context
-3. Implements the work, completing all subtasks in order
-4. Verifies with Playwright/Maestro (or falls back to tests if unavailable)
-5. Commits with descriptive message
-6. Returns summary with commit SHA
+Each feature has one plan file: `.ralph-teams/PLAN-N.md`. Every stage appends a section to it — no separate `REVIEW.md` or `VERIFY.md`.
 
-### Reviewer subagent
-1. Receives `BASE_SHA` and plan from orchestrator
-2. Runs `git diff <BASE_SHA>..HEAD` to see all changes
-3. Reviews against acceptance criteria
-4. Runs project build/tests
-5. Optionally consults Codex via Multi-CLI MCP
-6. Writes `.ralph-teams/REVIEW.md` with blocking/non-blocking findings
+| Section | Written by | When |
+|---------|-----------|------|
+| Tasks, criteria, scenarios | Orchestrator | Plan creation |
+| `## Review` | Reviewer agent | After build completes |
+| `## Review Fixes Applied` | Orchestrator | After fix-pass builder |
+| `## Verification` | Verify skill | After manual walkthrough |
+| `## Debug Fix` | Debug skill | After each bug fix |
+| `## Documentation` | Document skill | After scribe completes |
 
-### .ralph-teams/ directory
-
-| File | Written by | Purpose |
-|------|-----------|---------|
-| `PLAN.md` | Orchestrator | Tasks, acceptance criteria, verification scenarios |
-| `REVIEW.md` | Reviewer | Code review findings |
-| `VERIFY.md` | Verify skill | Manual E2E verification results |
-
-Created by the orchestrator (`mkdir -p .ralph-teams`) at the start of `/teams:plan`.
-
-### PLAN.md format
+### PLAN-N.md format
 
 ```markdown
-# Plan: [Feature Name]
+# Plan #N: [Feature Name]
 
+Plan ID: #N
 Generated: [date]
 Platform: web | mobile
 Status: draft | approved
 
 ## Tasks
 1. [ ] Task 1: [Description] — complexity: simple
-   - [Subtask 1 description]
-   - [Subtask 2 description]
-2. [x] Task 2: [Description] — complexity: standard  ← completed
-   - [Subtask 1 description]
-3. [!] Task 3: [Description] — complexity: standard  ← failed
-   - [Subtask 1 description]
-   - [Subtask 2 description]
+   - [Subtask 1]
+   - [Subtask 2]
+2. [ ] Task 2: [Description] — complexity: standard — parallel-group: A
+   - [Subtask 1]
+3. [ ] Task 3: [Description] — complexity: standard — parallel-group: A
+   - [Subtask 1]
 
 ## Acceptance Criteria
 - [Criterion 1]
@@ -127,9 +125,31 @@ Status: draft | approved
 Tool: Playwright | Maestro
 Scenarios:
 - [Scenario: name — steps — expected result]
+
+---
+
+## Review
+Date: ...
+Verdict: PASS | NEEDS FIXES
+...
+
+---
+
+## Verification
+Date: ...
+Summary: N passed, N failed
+...
+
+---
+
+## Debug Fix
+Date: ...
+Bug: ...
+Fix: ...
 ```
 
-Task status is tracked at the task level only (`[ ]` pending, `[x]` done, `[!]` failed). Subtasks are guidance for the builder — no individual status tracking.
+Task status: `[ ]` pending · `[x]` done · `[!]` failed.
+Parallel tasks: `parallel-group: [A/B/C]` — same label = runs concurrently.
 
 ---
 
@@ -137,11 +157,12 @@ Task status is tracked at the task level only (`[ ]` pending, `[x]` done, `[!]` 
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  TEAMS  [N of M tasks complete]
+  RALPH-TEAMS  [N of M tasks complete]  [SEQUENTIAL | PARALLEL]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  ✓  Task 1: ...          [done]
-  ►  Task 2: ...          [building...]
-  ○  Task 3: ...          [pending]
+  ✓  Task 1: ...          [done]         (haiku)
+  ►  Task 2: ...          [building...]  (sonnet) ┐ parallel-group A
+  ►  Task 3: ...          [building...]  (haiku)  ┘
+  ○  Task 4: ...          [pending]      (sonnet)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -157,7 +178,7 @@ Status symbols: `✓` done · `►` building · `✗` failed · `○` pending
   "owner": { "name": "<github-handle>" },
   "metadata": { "description": "...", "version": "X.Y.Z" },
   "plugins": [{
-    "name": "teams",
+    "name": "ralph-teams",
     "source": "./",
     "description": "...",
     "version": "X.Y.Z",
@@ -168,4 +189,4 @@ Status symbols: `✓` done · `►` building · `✗` failed · `○` pending
 }
 ```
 
-Plugin `version` must always match `metadata.version`.
+Both `metadata.version` and `plugins[].version` must match `plugin.json` version.
