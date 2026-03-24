@@ -1,6 +1,6 @@
 ---
 name: teams-debug
-description: "Fix any bug related to an active Teams plan. Can be triggered by the user at any time or automatically from teams-verify on failure. Reads PLAN.md, VERIFY.md, and REVIEW.md for context, then spawns a targeted Sonnet builder to fix the issue."
+description: "Fix any bug related to an active Teams plan. Can be triggered by the user at any time or automatically from teams-verify on failure. Reads the plan for context, spawns a targeted Sonnet builder to fix the issue, then appends a debug status update to the plan."
 user-invocable: true
 ---
 
@@ -10,7 +10,7 @@ Fix a bug related to the current Teams plan. This skill can be triggered:
 - **By the user at any time** — e.g. "something's broken, use `/teams-debug`"
 - **Automatically from `/teams-verify`** — when a scenario fails during manual verification
 
-It reads the existing plan and any available verification/review reports to understand context before fixing.
+It reads the plan (which contains all review and verification history) before fixing.
 
 **Prerequisite:** `.ralph-teams/PLAN.md` must exist. If not found, stop and tell the user to run `/teams-plan` first.
 
@@ -18,13 +18,7 @@ It reads the existing plan and any available verification/review reports to unde
 
 ## Step 1: Load Context
 
-Check that `.ralph-teams/PLAN.md` exists. If not:
-> `.ralph-teams/PLAN.md` not found. This skill requires an active Teams plan. Run `/teams-plan` first.
-
-Read all available context files:
-- `.ralph-teams/PLAN.md` — the feature plan (note its `Plan ID:` field)
-- `.ralph-teams/VERIFY.md` — if it exists, the manual verification report with failed scenarios
-- `.ralph-teams/REVIEW.md` — if it exists, the automated review findings
+Read `.ralph-teams/PLAN.md` — it contains the full plan, review findings, and verification results.
 
 ---
 
@@ -50,7 +44,7 @@ Summarize your understanding back to the user:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   RALPH-TEAMS Plan #[N] — Bug report
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Feature:   [feature name from PLAN.md]
+  Feature:   [feature name from plan]
   Bug:       [one-line summary]
   Related:   [task(s)/subtask(s) or scenario(s) from the plan]
   Criteria:  [affected acceptance criteria, if any]
@@ -75,21 +69,13 @@ Agent(
     Bug report:
     [user's bug description]
 
-    Feature plan (.ralph-teams/PLAN.md):
+    Full plan (includes review findings and verification results):
     [paste full PLAN.md content]
-
-    [If VERIFY.md exists:]
-    Verification report (.ralph-teams/VERIFY.md):
-    [paste VERIFY.md content]
-
-    [If REVIEW.md exists:]
-    Review findings (.ralph-teams/REVIEW.md):
-    [paste REVIEW.md content]
 
     Instructions:
     - Investigate the root cause of the bug before making changes
     - Fix only what is broken — do not refactor unrelated code
-    - Platform: [web|mobile from PLAN.md]
+    - Platform: [web|mobile from plan]
     - Verify the fix using [Playwright|Maestro] after applying it
     - If verification tools are not available, run tests/lint instead
     - Commit with message: 'fix: [short description of the bug fixed]'"
@@ -106,34 +92,23 @@ Print while the builder runs:
 
 ---
 
-## Step 5: Update Verification Report
+## Step 5: Append Debug Status to Plan
 
-After the builder completes, if `.ralph-teams/VERIFY.md` exists, update the relevant scenario's status from `FAIL` to `FIXED`:
-
-```markdown
-### ✓ Scenario N: [Name]
-Status: FIXED
-Fix applied: [commit message or brief description]
-```
-
----
-
-## Step 5b: Update Review Report
-
-If `.ralph-teams/REVIEW.md` exists, append a fix summary section at the bottom:
+After the builder completes, append a `## Debug Fix` entry to `.ralph-teams/PLAN.md` (do not overwrite — append at the end):
 
 ```markdown
 ---
 
-## Fix Applied
+## Debug Fix
 
-**Bug:** [one-line bug summary]
-**Fix:** [brief description of what was changed]
-**Commit:** [commit message]
-**Status:** Resolved
+Date: [date]
+Bug: [one-line summary]
+Fix: [brief description of what was changed]
+Commit: fix: [commit message]
+Status: Resolved
 ```
 
-If the REVIEW.md already has findings related to this bug, update the relevant finding's status to `Resolved` inline as well.
+If the `## Verification` section exists in the plan and has a matching failed scenario, update that scenario's status inline from `FAIL` to `FIXED`.
 
 ---
 

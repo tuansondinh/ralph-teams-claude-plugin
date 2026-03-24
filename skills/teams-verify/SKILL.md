@@ -1,12 +1,12 @@
 ---
 name: teams-verify
-description: "Guide the user through manually verifying the build E2E — walks through each scenario step-by-step, records pass/fail, and writes a verification report."
+description: "Guide the user through manually verifying the build E2E — walks through each scenario step-by-step, records pass/fail, and appends a verification status update to the plan file."
 user-invocable: true
 ---
 
 # Teams: Manual Verify
 
-You guide the user through manually verifying the completed build end-to-end. One scenario at a time. You record their results and write a final report.
+You guide the user through manually verifying the completed build end-to-end. One scenario at a time. You record their results and append a status update to the plan.
 
 ---
 
@@ -20,8 +20,7 @@ Extract:
 - All tasks
 - Acceptance criteria
 - Verification scenarios
-
-Also read `.ralph-teams/REVIEW.md` if it exists (to know what was already flagged by the automated reviewer).
+- Any existing `## Review` section (to know what the automated reviewer already flagged)
 
 ---
 
@@ -41,7 +40,7 @@ Wait for their response. Note any skips.
 
 ## Step 3: Walk Through Scenarios
 
-For each verification scenario from `.ralph-teams/PLAN.md`, present it one at a time:
+For each verification scenario from the plan, present it one at a time:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -75,39 +74,26 @@ Keep going until all scenarios are covered.
 
 ---
 
-## Step 4: Write Verification Report
+## Step 4: Append Verification Status to Plan
 
-Write results to `.ralph-teams/VERIFY.md`:
+Append a `## Verification` section to `.ralph-teams/PLAN.md` (do not overwrite anything — append at the end):
 
 ```markdown
-# Manual Verification Report: [Feature Name]
+---
 
-Plan ID: #[N]
+## Verification
+
 Date: [date]
 Verified by: User
+Summary: [N passed, N failed, N skipped]
 
-## Summary
-- Total scenarios: N
-- Passed: N
-- Failed: N
-- Skipped: N
+- ✓ [Scenario name]: PASS
+- ✗ [Scenario name]: FAIL — [what user reported]
+- — [Scenario name]: SKIPPED — [reason]
 
-## Results
-
-### ✓ Scenario 1: [Name]
-Status: PASS
-
-### ✗ Scenario 2: [Name]
-Status: FAIL
-User reported: [description]
-
-### — Scenario 3: [Name]
-Status: SKIPPED
-Reason: [reason]
-
-## Acceptance Criteria
-- [x] Criterion 1
-- [ ] Criterion 2 — FAILED (see scenario 2)
+### Acceptance Criteria
+- [x] Criterion 1: verified
+- [ ] Criterion 2: FAILED (see above)
 ```
 
 ---
@@ -132,6 +118,6 @@ If there are failures, offer:
 > - `/teams-debug` — fix bugs one at a time with full plan context (recommended)
 > - **Fix all** — I spawn a single builder to address all failures at once
 
-If they choose **`/teams-debug`**: invoke the `teams-debug` skill for each failed scenario in order, passing the scenario name and failure description. After each fix, mark the scenario as `FIXED` in `.ralph-teams/VERIFY.md`.
+If they choose **`/teams-debug`**: invoke the `teams-debug` skill for each failed scenario in order, passing the scenario name and failure description. After each fix, update the `## Verification` section in the plan to mark the scenario as `FIXED`.
 
-If they choose **fix all**: read the failures from `.ralph-teams/VERIFY.md` and spawn a **Sonnet** builder subagent with the full list of issues. Then offer to re-run verification on just the failed scenarios.
+If they choose **fix all**: read the failures from the plan's `## Verification` section and spawn a **Sonnet** builder subagent with the full list of issues. Then offer to re-run verification on just the failed scenarios.

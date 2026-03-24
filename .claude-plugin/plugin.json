@@ -1,7 +1,7 @@
 {
   "name": "ralph-teams",
-  "description": "Plan and build features using sequential Sonnet builder subagents, automated E2E verification, and an Opus code review pass.",
-  "version": "1.3.6",
+  "description": "Plan and build features using sequential or parallel Sonnet builder subagents, automated E2E verification, and an Opus code review pass.",
+  "version": "1.4.2",
   "author": {
     "name": "tuansondinh"
   },

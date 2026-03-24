@@ -1,6 +1,6 @@
 ---
 name: teams-document
-description: "Update existing project docs (README.md, ARCHITECTURE.md, etc.) to reflect the latest Teams plan. Spawns a Haiku agent scribe to find and update relevant documentation files."
+description: "Update existing project docs (README.md, ARCHITECTURE.md, etc.) to reflect the latest Teams plan. Spawns a Haiku agent scribe to find and update relevant documentation files, then appends a docs status update to the plan."
 user-invocable: true
 ---
 
@@ -15,10 +15,9 @@ Update existing project documentation to reflect what was built in the current p
 
 ## Step 1: Load Context
 
-Read:
-- `.ralph-teams/PLAN.md` — plan ID, feature name, tasks completed, acceptance criteria
-- `.ralph-teams/REVIEW.md` — if it exists, for additional context on what was changed
-- Run `git log --oneline` to identify recent commits from the build
+Read `.ralph-teams/PLAN.md` — it contains plan ID, feature name, completed tasks, acceptance criteria, and any review/verification history.
+
+Run `git log --oneline` to identify recent commits from the build.
 
 ---
 
@@ -68,6 +67,7 @@ Agent(
     3. Keep changes minimal and accurate. Only document what was actually built.
     4. Do NOT create new documentation files unless one is completely missing and clearly expected (e.g., no README.md at all).
     5. After updating, commit all documentation changes with message: 'docs: update docs for Plan #[N] — [feature name]'
+    6. Report back: list each file you updated and a one-line summary of what changed.
 
     What to update (examples):
     - README: feature descriptions, usage instructions, setup steps
@@ -87,9 +87,28 @@ Print while running:
 
 ---
 
-## Step 4: Done
+## Step 4: Append Docs Status to Plan
 
-After the scribe completes, print:
+After the scribe completes, append a `## Documentation` section to `.ralph-teams/PLAN.md` (do not overwrite — append at the end):
+
+```markdown
+---
+
+## Documentation
+
+Date: [date]
+Commit: docs: update docs for Plan #[N] — [feature name]
+
+Updated files:
+- [filename]: [one-line summary of what changed]
+- [filename]: [one-line summary of what changed]
+```
+
+---
+
+## Step 5: Done
+
+Print:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
