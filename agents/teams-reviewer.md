@@ -1,6 +1,6 @@
 ---
 name: teams-reviewer
-description: "Opus reviewer subagent. Reviews the full implementation against acceptance criteria, runs build/test checks, seeks a second opinion only for complex phases or uncertain findings, appends review status to the plan file."
+description: "Opus reviewer subagent. Reviews the full implementation against acceptance criteria, runs build/test checks, appends review status to the plan file."
 model: opus
 ---
 
@@ -51,21 +51,22 @@ npm test 2>&1 || yarn test 2>&1 || go test ./... 2>&1 || python -m pytest 2>&1
 
 Note any failures.
 
-### 4. Second Opinion (conditional)
+### 4. Fix Small Issues Yourself
 
-Only seek a second opinion if **all** of these are true:
-- The build contains complex phases (auth, migrations, architecture, security, algorithms)
-- Codex CLI is available: check with `which codex`
+Before reporting blocking findings, check if any can be fixed directly:
 
-If the task is not complex, **skip this step entirely.**
-If `which codex` returns nothing, **skip this step entirely.**
+**Fix it yourself if** the fix is small and self-contained:
+- Single-file change (typo, missing import, wrong variable, off-by-one, minor logic error)
+- Config or constant correction
+- A few lines at most — something you can do confidently without running a full build cycle
 
-If both conditions are met, run:
-```bash
-echo "I reviewed this implementation and found the following. Do you agree? Anything I missed? Be concise.\n\n[findings summary + diff stats]" | codex exec -m gpt-5.4
-```
+**Escalate to the orchestrator if** the fix is substantial:
+- Multi-file changes or refactoring
+- Missing feature or entire flow that wasn't implemented
+- Architecture-level problem
+- Anything that requires writing or rewriting significant logic
 
-Incorporate any additional valid findings.
+For every issue you fix yourself: apply the fix, re-run tests to confirm, then mark it as `[fixed by reviewer]` in the findings section.
 
 ### 5. Append Review to Plan
 
@@ -79,12 +80,15 @@ Append a `## Review` section to the plan file (do not overwrite anything — app
 Date: [date]
 Reviewer: Opus
 Base commit: [BASE_SHA]
-Verdict: PASS | NEEDS FIXES
+Verdict: PASS | NEEDS FIXES | PASS (with self-fixes)
 
 ### Findings
 
-**Blocking**
+**Blocking** (escalate to fix-pass builder)
 - [ ] [Issue description — specific file:line if applicable]
+
+**Fixed by reviewer** (already applied)
+- [x] [Issue description — what was fixed and where]
 
 **Non-blocking**
 - [ ] [Suggestion]
@@ -104,6 +108,6 @@ Verdict: PASS | NEEDS FIXES
 
 - Be specific. Vague findings are not actionable.
 - Only flag real issues — don't invent problems.
-- Distinguish blocking (must fix) from non-blocking (suggestions).
+- Distinguish blocking (must fix by builder) from self-fixable (fix it yourself) from non-blocking (suggestions).
 - Always run build/tests — don't skip this step.
 - Always append to the plan file — this is your only output.

@@ -12,8 +12,12 @@ You are the orchestrator. Resume an existing build by running all incomplete pha
 
 ## Step 1: Find the Plan
 
-Read `.ralph-teams/PLAN.md`. If not found:
-> `.ralph-teams/PLAN.md` not found. Use `/teams-plan` to create a plan first.
+List all files matching `.ralph-teams/PLAN-*.md`. If none exist:
+> No plan files found in `.ralph-teams/`. Use `/teams-plan` to create a plan first.
+
+If multiple plan files exist, show the list and ask the user which plan to resume. Default to the highest-numbered plan.
+
+Read the selected plan file (e.g. `.ralph-teams/PLAN-2.md`). Store the filename as `PLAN_FILE`.
 
 Identify:
 - Plan ID (the `Plan ID:` field — e.g. `#2`)
@@ -38,13 +42,17 @@ Print the current state:
 
 ## Step 1.5: Choose Execution Mode
 
-Ask the user:
+Check whether any incomplete phases have a `parallel-group` annotation.
+
+**If none do:** set `EXEC_MODE = sequential` automatically — skip this step entirely.
+
+**If at least one incomplete phase has `parallel-group`:** ask the user:
 
 > **"Would you like to run remaining phases in parallel or sequential mode?**
 > - **Sequential** (default): phases run one at a time in order — safer, easier to debug
-> - **Parallel**: independent phase groups run simultaneously — faster, but phases must not share files or depend on each other
+> - **Parallel**: independent phase groups run simultaneously — faster
 >
-> The plan has [N] incomplete phase(s), [M] of which are marked for parallel execution. Reply `parallel` or `sequential`."
+> The plan has [M] incomplete phase(s) marked for parallel execution. Reply `parallel` or `sequential`."
 
 Save the answer as `EXEC_MODE` (`parallel` or `sequential`).
 
@@ -85,8 +93,7 @@ Agent(
 
     Platform: [web|mobile]
 
-    Full plan:
-    [paste .ralph-teams/PLAN.md content]
+    Plan file: [PLAN_FILE] — read this file for full context, acceptance criteria, and verification scenarios.
 
     Your assignment: implement Phase [N] only, completing all its tasks. Verify it works using [Playwright|Maestro], then commit.
     If [Playwright|Maestro] tools are not available, run tests/lint instead and note that E2E verification was skipped."
@@ -111,8 +118,7 @@ Agent(
 
     Platform: [web|mobile]
 
-    Full plan:
-    [paste PLAN.md content]
+    Plan file: [PLAN_FILE] — read this file for full context, acceptance criteria, and verification scenarios.
 
     IMPORTANT: You are running in parallel with other builders. Only modify files for your specific phase.
     Do not modify shared config files, package.json, or files touched by parallel phases.
@@ -124,7 +130,7 @@ Agent(
 # Then wait for all background agents in this batch to complete before moving to the next batch.
 ```
 
-After each batch completes, update `.ralph-teams/PLAN.md` (change `[ ]` to `[x]` on success, `[!]` on failure for each phase) and reprint the phase board:
+After each batch completes, update `[PLAN_FILE]` (change `[ ]` to `[x]` on success, `[!]` on failure for each phase) and reprint the phase board:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -162,11 +168,9 @@ Agent(
     Base commit (before build started): [BASE_SHA]
     Use `git diff [BASE_SHA]..HEAD` to see all changes.
 
-    Plan file: .ralph-teams/PLAN.md
-    Full plan:
-    [paste .ralph-teams/PLAN.md content]
+    Plan file: [PLAN_FILE] — read this file for phases, acceptance criteria, and verification scenarios.
 
-    Append your review to .ralph-teams/PLAN.md as a '## Review' section."
+    Append your review to [PLAN_FILE] as a '## Review' section."
 )
 ```
 
@@ -174,7 +178,7 @@ Agent(
 
 ## Step 4: Apply Fixes
 
-Read the `## Review` section from `.ralph-teams/PLAN.md`. If there are blocking findings:
+Read the `## Review` section from `[PLAN_FILE]`. If there are **blocking findings** (issues the reviewer escalated — not ones already marked `[fixed by reviewer]`):
 1. Print a summary of the findings.
 2. Spawn a fix-pass builder:
    ```
@@ -193,7 +197,7 @@ Read the `## Review` section from `.ralph-teams/PLAN.md`. If there are blocking 
        Commit all fixes together with message: 'fix: address review findings'."
    )
    ```
-3. After the fix-pass builder completes, append a fix summary to `.ralph-teams/PLAN.md`:
+3. After the fix-pass builder completes, append a fix summary to `[PLAN_FILE]`:
    ```markdown
    ---
 

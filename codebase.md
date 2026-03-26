@@ -109,14 +109,14 @@ Generated: [date]
 Platform: web | mobile
 Status: draft | approved
 
-## Tasks
-1. [ ] Task 1: [Description] — complexity: simple
-   - [Subtask 1]
-   - [Subtask 2]
-2. [ ] Task 2: [Description] — complexity: standard — parallel-group: A
-   - [Subtask 1]
-3. [ ] Task 3: [Description] — complexity: standard — parallel-group: A
-   - [Subtask 1]
+## Phases
+1. [ ] Phase 1: [Description] — complexity: simple
+   - [Task 1]
+   - [Task 2]
+2. [ ] Phase 2: [Description] — complexity: standard — parallel-group: A
+   - [Task 1]
+3. [ ] Phase 3: [Description] — complexity: standard — parallel-group: A
+   - [Task 1]
 
 ## Acceptance Criteria
 - [Criterion 1]
@@ -148,8 +148,8 @@ Bug: ...
 Fix: ...
 ```
 
-Task status: `[ ]` pending · `[x]` done · `[!]` failed.
-Parallel tasks: `parallel-group: [A/B/C]` — same label = runs concurrently.
+Phase status: `[ ]` pending · `[x]` done · `[!]` failed.
+Parallel phases: `parallel-group: [A/B/C]` — same label = runs concurrently.
 
 ---
 
@@ -157,12 +157,12 @@ Parallel tasks: `parallel-group: [A/B/C]` — same label = runs concurrently.
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  RALPH-TEAMS  [N of M tasks complete]  [SEQUENTIAL | PARALLEL]
+  RALPH-TEAMS  [N of M phases complete]  [SEQUENTIAL | PARALLEL]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  ✓  Task 1: ...          [done]         (haiku)
-  ►  Task 2: ...          [building...]  (sonnet) ┐ parallel-group A
-  ►  Task 3: ...          [building...]  (haiku)  ┘
-  ○  Task 4: ...          [pending]      (sonnet)
+  ✓  Phase 1: ...          [done]         (haiku)
+  ►  Phase 2: ...          [building...]  (sonnet) ┐ parallel-group A
+  ►  Phase 3: ...          [building...]  (haiku)  ┘
+  ○  Phase 4: ...          [pending]      (sonnet)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 

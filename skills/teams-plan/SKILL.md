@@ -16,12 +16,12 @@ Ask: **"What do you want to build?"**
 
 Discuss with the user. Identify the target platform: **web** or **mobile** (this determines whether the builder uses Playwright or Maestro for verification).
 
-**Phase sizing:** Each phase runs in its own builder agent with a 200k token context window. A well-sized phase should fill **50–60% of that context** — meaning the builder will read, write, and reason about enough code that it uses roughly half its available context doing the work. Phases contain tasks (concrete steps the builder follows).
+**Phase sizing:** Each phase runs in its own builder agent with a 200k token context window. A well-sized phase **MUST target ~60% of that context** — enough that the builder is doing substantial work, but not so much that it risks context exhaustion (context rot). Phases contain tasks (concrete steps the builder follows).
 - **Too small:** a phase that takes only a few minutes or touches one file — merge it into a related phase or make it a task within a larger phase.
-- **Too big:** a phase whose tasks collectively require more code than fits in one builder session — split it into two phases.
+- **Too big:** a phase whose tasks would push the builder past ~60% context — context rot causes quality to degrade. Split it into two phases.
 - **Right size:** "Implement full auth system" (tasks: user model + DB migration, signup/login endpoints, JWT middleware + refresh tokens, password reset flow, email verification, auth guards on all protected routes, unit + integration tests), "Build product catalog" (tasks: product model + seed data, list page with filters + pagination, detail page, search endpoint, cart integration, component tests).
 
-> **Rule of thumb:** a phase = one meaningful feature area with enough depth to keep a builder busy for a substantial session. Tasks = the concrete steps the builder takes to complete it. Aim for 4–8 tasks per phase. When in doubt, make phases larger rather than smaller.
+> **Rule of thumb:** a phase = one meaningful feature area with enough depth to keep a builder busy for a substantial session. Tasks = the concrete steps the builder takes to complete it. Aim for 4–8 tasks per phase. Target ~60% context usage — not less (wasted capacity), not more (context rot).
 
 **Phase complexity:** For each phase, assign a complexity level — this determines which model the builder uses:
 - `simple` → `haiku`: truly trivial phases only — renaming, copy changes, config tweaks, adding a single field
@@ -106,11 +106,15 @@ Display `.ralph-teams/PLAN-[N].md` and ask:
 
 ## Step 3.5: Choose Execution Mode
 
-After approval, ask the user:
+After approval, check whether any phases have a `parallel-group` annotation.
+
+**If no phases have `parallel-group`:** all phases are sequential by dependency — skip this step entirely and set `EXEC_MODE = sequential` automatically.
+
+**If at least one `parallel-group` exists:** ask the user:
 
 > **"Would you like to run phases in parallel or sequential mode?**
 > - **Sequential** (default): phases run one at a time in order — safer, easier to debug
-> - **Parallel**: independent phase groups run simultaneously — faster, but phases must not share files or depend on each other
+> - **Parallel**: independent phase groups run simultaneously — faster
 >
 > The plan has [N] phase(s) marked for parallel execution. Reply `parallel` or `sequential`."
 
@@ -163,8 +167,7 @@ Agent(
 
     Platform: [web|mobile]
 
-    Full plan:
-    [paste .ralph-teams/PLAN-[N].md content]
+    Plan file: .ralph-teams/PLAN-[N].md — read this file for full context, acceptance criteria, and verification scenarios.
 
     Your assignment: implement Phase [N] only, completing all its tasks. Verify it works using [Playwright|Maestro], then commit.
     If [Playwright|Maestro] tools are not available, run tests/lint instead and note that E2E verification was skipped."
@@ -189,8 +192,7 @@ Agent(
 
     Platform: [web|mobile]
 
-    Full plan:
-    [paste PLAN-[N].md content]
+    Plan file: .ralph-teams/PLAN-[N].md — read this file for full context, acceptance criteria, and verification scenarios.
 
     IMPORTANT: You are running in parallel with other builders. Only modify files for your specific phase.
     Do not modify shared config files, package.json, or files touched by parallel phases.
@@ -246,12 +248,9 @@ Agent(
     Base commit (before build started): [BASE_SHA]
     Use `git diff [BASE_SHA]..HEAD` to see all changes.
 
-    Plan file: .ralph-teams/PLAN-[N].md
-    Full plan:
-    [paste .ralph-teams/PLAN-[N].md content]
+    Plan file: .ralph-teams/PLAN-[N].md — read this file for phases, acceptance criteria, and verification scenarios.
 
-    Append your review to .ralph-teams/PLAN-[N].md as a '## Review' section.
-    If mcp__Multi-CLI__Ask-Codex is available, use it for a second opinion."
+    Append your review to .ralph-teams/PLAN-[N].md as a '## Review' section."
 )
 ```
 
@@ -261,7 +260,7 @@ Agent(
 
 After the reviewer completes, read the `## Review` section from `.ralph-teams/PLAN-[N].md`.
 
-If there are blocking findings:
+If there are **blocking findings** (issues the reviewer escalated — not ones already marked `[fixed by reviewer]`):
 1. Print a summary of the review findings.
 2. Spawn a fix-pass builder:
    ```
